@@ -1,7 +1,8 @@
 model_name: 'default_p0'
 #configure model grid
 seed: 3
-grid_size: 2000
+nrows: 40
+ncols: 80
 cell_size: 10.
 slope: 0.003
 rf: 5
