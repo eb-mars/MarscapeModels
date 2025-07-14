@@ -6,14 +6,7 @@ from load import load_params
 import matplotlib.pyplot as plt
 
 #Parameters (temporary -- eventually unpack from params_default.txt)
-
-flow_director = "D8"
-K_sp = 0.0001
-m_sp = 0.7
-n_sp = 0.5
 runs = 10
-
-# --- Experiment 1: Tilted landscape with two rock types --- 🏗️🧱
 
 #### LOAD PARAMETERS FROM PARAMETER FILE
 params = load_params(txt); ## parameter dictionary
@@ -24,6 +17,7 @@ cell_size = params['cell_size'];
 slope = params['slope']; 
 rf = params['rf'];
 xy = int(grid_size/cell_size);
+flow_director = params[flow_director];
 K_sp = params['K_sp']; 
 m_sp = params['m_sp']; 
 n_sp = params['n_sp']; 
@@ -38,7 +32,7 @@ North = params['North'];
 East = params['East'];
 South = params['South']; 
 
-
+# --- Experiment 1: Tilted landscape with two rock types --- 🏗️🧱
 # 1. Create the initial topography
 initial_grid = create_tilted_landscape(rows=50, cols=100)
 
