@@ -8,6 +8,8 @@ import matplotlib.pyplot as plt
 #Parameters (temporary -- eventually unpack from params_default.txt)
 runs = 10
 
+# --- Experiment 1: Tilted landscape with two rock types ---
+
 #### LOAD PARAMETERS FROM PARAMETER FILE
 params = load_params("txt") ## parameter dictionary
 name = params['model_name']
