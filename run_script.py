@@ -2,6 +2,7 @@
 from model import TopoModel
 from make_topography import create_tilted_landscape, add_checkerboard_lithology
 from landlab.plot import imshow_grid
+from load import load_params
 import matplotlib.pyplot as plt
 
 #Parameters (temporary -- eventually unpack from params_default.txt)
@@ -13,6 +14,29 @@ n_sp = 0.5
 runs = 10
 
 # --- Experiment 1: Tilted landscape with two rock types --- 🏗️🧱
+
+#### LOAD PARAMETERS FROM PARAMETER FILE
+params = load_params(txt); ## parameter dictionary
+name = params['model_name'];
+seed = params['seed']; 
+grid_size = params['grid_size']; 
+cell_size = params['cell_size'];
+slope = params['slope']; 
+rf = params['rf'];
+xy = int(grid_size/cell_size);
+K_sp = params['K_sp']; 
+m_sp = params['m_sp']; 
+n_sp = params['n_sp']; 
+runoff_rate = params['runoff_rate']; 
+dt = params['dt']; 
+steps = params['steps']; 
+## boundary conditions (True = closed, False = open);
+## in mg.set_closed_boundaries(West, North, East, South);
+West = params['West'];
+North = params['North'];
+East = params['East'];
+South = params['South']; 
+
 
 # 1. Create the initial topography
 initial_grid = create_tilted_landscape(rows=50, cols=100)
