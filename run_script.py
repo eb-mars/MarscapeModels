@@ -13,7 +13,7 @@ m_sp = 0.7
 n_sp = 0.5
 runs = 10
 
-# --- Experiment 1: Tilted landscape with two rock types --- 🏗️🧱
+# --- Experiment 1: Tilted landscape with two rock types ---
 
 #### LOAD PARAMETERS FROM PARAMETER FILE
 params = load_params(txt); ## parameter dictionary
