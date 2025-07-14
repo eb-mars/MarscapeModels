@@ -14,11 +14,12 @@ runs = 10
 params = load_params("txt") ## parameter dictionary
 name = params['model_name']
 seed = params['seed']
-grid_size = params['grid_size']
+nrows = params['nrows']
+ncols = params['ncols']
 cell_size = params['cell_size']
 slope = params['slope']
 rf = params['rf']
-xy = int(grid_size/cell_size)
+# xy = int(grid_size/cell_size)
 flow_director = params['flow_director']
 K_sp = params['K_sp']
 m_sp = params['m_sp'] 
@@ -36,7 +37,7 @@ South = params['South']
 
 # --- Experiment 1: Tilted landscape with two rock types ---
 # 1. Create the initial topography
-initial_grid = create_tilted_landscape(rows=50, cols=100)
+initial_grid = create_tilted_landscape(rows=nrows, cols=ncols, cell_size=cell_size, tilt=slope)
 
 # 2. Add a lithology pattern to it
 final_grid = add_checkerboard_lithology(initial_grid)
