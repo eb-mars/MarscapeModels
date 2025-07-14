@@ -16,4 +16,5 @@ m_sp: 0.7
 runoff_rate: 1.0
 dt: 100
 tsteps: 200
+rain_variability: False
 

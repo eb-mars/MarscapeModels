@@ -3,7 +3,7 @@ from landlab.components import FastscapeEroder, FlowAccumulator, DepressionFinde
 
 
 class TopoModel:
-    def __init__(self, grid, K_sp, m_sp, n_sp, flow_director):
+    def __init__(self, grid, K_sp, m_sp, n_sp, flow_director, rain_variability=False):
         """
         Initializes the model using a PRE-CONFIGURED grid.
         It doesn't create the grid itself.
@@ -20,7 +20,11 @@ class TopoModel:
         # Instantiate flow accumulator, dpression finder, and fastscape eroder components
         self.fr = FlowAccumulator(self.grid, flow_director = flow_director)
         self.df = DepressionFinderAndRouter(self.grid)
-        self.fsc = FastscapeEroder(self.grid, K_sp, m_sp, n_sp)
+
+        if rain_variability == False: 
+            self.fsc = FastscapeEroder(self.grid, K_sp, m_sp, n_sp, discharge_field='drainage_area')
+        elif rain_variability == True:
+            self.fsc = FastscapeEroder(self.grid, K_sp, m_sp, n_sp, discharge_field='surface_water__discharge')
 
 
     def run_one_step(self, dt):

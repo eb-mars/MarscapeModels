@@ -28,8 +28,9 @@ K_sp = params['K_sp'];
 m_sp = params['m_sp']; 
 n_sp = params['n_sp']; 
 runoff_rate = params['runoff_rate']; 
+rain_variability = params['rain_variability'];
 dt = params['dt']; 
-steps = params['steps']; 
+steps = params['steps'];
 ## boundary conditions (True = closed, False = open);
 ## in mg.set_closed_boundaries(West, North, East, South);
 West = params['West'];
@@ -43,6 +44,11 @@ initial_grid = create_tilted_landscape(rows=50, cols=100)
 
 # 2. Add a lithology pattern to it
 final_grid = add_checkerboard_lithology(initial_grid)
+
+# 2a. (optional) Create an array of rainfall to add at each step
+##  find the value: -- GEL / time / grid number of nodes
+##  create array of same size as grid, with every entry = the value above. 
+
 
 # 3. Create a model instance with the prepared grid
 model_run = TopoModel(K_sp, m_sp, n_sp, flow_director)
