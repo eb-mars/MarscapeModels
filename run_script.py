@@ -23,6 +23,8 @@ m_sp = params['m_sp']
 n_sp = params['n_sp'] 
 runoff_rate = params['runoff_rate']
 rain_variability = params['rain_variability']
+rain_variability = True
+rainfall_rate = 0.1
 dt = params['dt']
 runtime = params['runtime']
 ## boundary conditions (True = closed, False = open);
@@ -44,14 +46,14 @@ final_grid = add_uniform_lithology(initial_grid, erodibility=K_sp)
 ##  create array of same size as grid, with every entry = the value above. 
 
 # 3. Create a model instance with the prepared grid
-model_run = TopoModel(final_grid, 'K_sp', m_sp, n_sp, flow_director)
+model_run = TopoModel(final_grid, K_sp, m_sp, n_sp, flow_director, rain_variability)
 
 # 3a. Define the boundaries of the grid
 model_run.define_boundaries(final_grid, tilt_direction)
 
 # 4. Run the model
 print("Starting model run...")
-model_run.run_model(runtime=runtime, dt=dt) # Run for 500,000 years
+model_run.run_model(runtime, dt, rainfall_rate) # Run for 500,000 years
 print("Model run complete.")
 
 # 5. Visualize the result
