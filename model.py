@@ -52,7 +52,7 @@ class TopoModel:
         self.grid.status_at_node[self.grid.fixed_value_boundary_nodes] = self.grid.BC_NODE_IS_FIXED_VALUE
             
 
-    def run_one_step(self, dt):
+    def run_one_step(self, dt, rainfall_rate = None):
         """Runs the model for a single timestep.
         
         Parameters:
