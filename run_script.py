@@ -34,7 +34,7 @@ South = params['South']
 
 # --- Experiment 1: Tilted landscape with two rock types ---
 # 1. Create the initial topography
-initial_grid = create_tilted_landscape(rows=nrows, cols=ncols, cell_size=cell_size, rf=rf, tilt=slope, tilt_direction=tilt_direction)
+initial_grid = create_tilted_landscape(rows=nrows, cols=ncols, cell_size=cell_size, rf=rf, tilt=slope, tilt_direction=tilt_direction, seed=seed)
 
 # 2. Add a lithology pattern to it
 final_grid = add_uniform_lithology(initial_grid)
