@@ -44,15 +44,16 @@ def create_tilted_landscape(rows, cols, cell_size=1000, tilt=0.01, rf=0.1, tilt_
     """
     grid = RasterModelGrid((rows, cols), xy_spacing=cell_size)
     z = grid.add_zeros('topographic__elevation', at='node')
-    match tilt_direction:
-        case 'North':
-            z -= grid.y_of_node * tilt  # Tilt the landscape along the y-axis
-        case 'South':
-            z += grid.y_of_node * tilt  # Tilt the landscape along the y-axis
-        case 'East':
-            z -= grid.x_of_node * tilt  # Tilt the landscape along the x-axis
-        case 'West':        
-            z += grid.x_of_node * tilt  # Tilt the landscape along the x-axis
+    if tilt_direction == 'North':
+        z -= grid.y_of_node * tilt  # Tilt the landscape along the y-axis
+    elif tilt_direction == 'South':
+        z += grid.y_of_node * tilt  # Tilt the landscape along the y-axis
+    elif tilt_direction == 'East':
+        z -= grid.x_of_node * tilt  # Tilt the landscape along the x-axis
+    elif tilt_direction == 'West':
+        z += grid.x_of_node * tilt  # Tilt the landscape along the x-axis
+    else:
+        raise ValueError("Invalid tilt direction. Choose from 'North', 'South', 'East', or 'West'.")
     np.random.seed(seed)
     z += np.random.rand(grid.number_of_nodes) * rf * cell_size # Add some noise
     return grid
