@@ -1,4 +1,3 @@
-# model.py
 from landlab.components import FastscapeEroder, FlowAccumulator, DepressionFinderAndRouter
 
 

@@ -1,12 +1,8 @@
-# run_simulation.py
 from model import TopoModel
 from make_topography import create_tilted_landscape, add_checkerboard_lithology
 from landlab.plot import imshow_grid
 from load import load_params_txt
 import matplotlib.pyplot as plt
-
-#Parameters (temporary -- eventually unpack from params_default.txt)
-runs = 10
 
 # --- Experiment 1: Tilted landscape with two rock types ---
 
@@ -46,13 +42,12 @@ final_grid = add_checkerboard_lithology(initial_grid)
 ##  find the value: -- GEL / time / grid number of nodes
 ##  create array of same size as grid, with every entry = the value above. 
 
-
 # 3. Create a model instance with the prepared grid
-model_run = TopoModel(K_sp, m_sp, n_sp, flow_director)
+model_run = TopoModel(final_grid, K_sp, m_sp, n_sp, flow_director)
 
 # 4. Run the model
 print("Starting model run...")
-model_run.run_model(runtime=500000) # Run for 500,000 years
+model_run.run_model(runtime=dt*steps, dt=dt) # Run for 500,000 years
 print("Model run complete.")
 
 # 5. Visualize the result
