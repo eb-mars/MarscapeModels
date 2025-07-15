@@ -37,14 +37,14 @@ South = params['South']
 initial_grid = create_tilted_landscape(rows=nrows, cols=ncols, cell_size=cell_size, rf=rf, tilt=slope, tilt_direction=tilt_direction, seed=seed)
 
 # 2. Add a lithology pattern to it
-final_grid = add_uniform_lithology(initial_grid)
+final_grid = add_uniform_lithology(initial_grid, erodibility=K_sp)
 
 # 2a. (optional) Create an array of rainfall to add at each step
 ##  find the value: -- GEL / time / grid number of nodes
 ##  create array of same size as grid, with every entry = the value above. 
 
 # 3. Create a model instance with the prepared grid
-model_run = TopoModel(final_grid, K_sp, m_sp, n_sp, flow_director)
+model_run = TopoModel(final_grid, 'K_sp', m_sp, n_sp, flow_director)
 
 # 3a. Define the boundaries of the grid
 model_run.define_boundaries(final_grid, tilt_direction)
