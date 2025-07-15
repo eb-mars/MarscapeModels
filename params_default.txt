@@ -6,6 +6,7 @@ ncols: 80
 cell_size: 10.
 slope: 0.003
 rf: 0.1
+tilt_direction: East
 West: True
 North: True
 East: True
