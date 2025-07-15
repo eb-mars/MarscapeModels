@@ -19,5 +19,6 @@ m_sp: 0.7
 runoff_rate: 1.0
 dt: 10
 runtime: 1000
-rain_variability: False
+rain_variability: True
+rainfall_rate: 1
 

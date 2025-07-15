@@ -4,7 +4,7 @@ from landlab import RasterModelGrid
 
 
 class TopoModel:
-    def __init__(self, grid, K_sp, m_sp, n_sp, flow_director, rain_variability=False):
+    def __init__(self, grid, K_sp, m_sp, n_sp, flow_director, rainfall_rate = None, rain_variability=False):
         """
         Initializes the model using a PRE-CONFIGURED grid.
         It doesn't create the grid itself.
@@ -26,6 +26,9 @@ class TopoModel:
             self.fsc = FastscapeEroder(self.grid, K_sp, m_sp, n_sp, discharge_field='drainage_area')
         elif rain_variability == True:
             self.fsc = FastscapeEroder(self.grid, K_sp, m_sp, n_sp, discharge_field='surface_water__discharge')
+            if rainfall_rate is not None:
+                drainage_area = self.grid.at_node['drainage_area']  # m²
+                self.grid.at_node['water__unit_flux_in'] = np.ones_like(drainage_area) * rainfall_rate
 
 
     def define_boundaries(self, grid, slope_direction):
@@ -52,7 +55,7 @@ class TopoModel:
         self.grid.status_at_node[self.grid.fixed_value_boundary_nodes] = self.grid.BC_NODE_IS_FIXED_VALUE
             
 
-    def run_one_step(self, dt, rainfall_rate):
+    def run_one_step(self, dt):
         """Runs the model for a single timestep.
         
         Parameters:
@@ -64,19 +67,10 @@ class TopoModel:
         # Route flow and handle depressions
         self.fr.run_one_step()
         self.df.map_depressions()
-
-        # Compute discharge if rainfall_rate is specified
-        if rainfall_rate is not None:
-            drainage_area = self.grid.at_node['drainage_area']  # m²
-            # discharge = rainfall_rate * drainage_area           # m³/year
-            # self.grid.at_node['surface_water__discharge'] = discharge
-            self.grid.at_node['water__unit_flux_in'] = np.ones_like(drainage_area) * rainfall_rate
-
-        # Erode based on discharge
         self.fsc.run_one_step(dt=dt)
 
 
-    def run_model(self, runtime, dt, rainfall_rate):
+    def run_model(self, runtime, dt):
         """Runs the model for a specified duration.
         
         Parameters:
@@ -88,6 +82,6 @@ class TopoModel:
         
         num_steps = int(runtime / dt)
         for i in range(num_steps):
-            self.run_one_step(dt, rainfall_rate)
+            self.run_one_step(dt)
             if i % 10 == 0: # Print progress
                 print(f"Step {i} of {num_steps}")
