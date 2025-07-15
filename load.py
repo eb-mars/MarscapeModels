@@ -22,13 +22,9 @@ def load_params_txt(ext=".txt"):
         raise TypeError("The 'ext' argument must be a string (e.g., 'txt').")
     
     ext = ext if ext.startswith(".") else f".{ext}"
-    print('ext', ext)
-
         
     cwd = os.getcwd(); ## current working directory
-    print('cwd', cwd)
     paramfile = glob.glob(os.path.join(cwd, f"*{ext}"))[0]; ## find the params file (of whatever extension, e.g. txt) in the current folder
-    print('pf', paramfile)
     
     ## No file found?? --> Raise an error 
     if not paramfile:
