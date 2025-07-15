@@ -1,10 +1,12 @@
 from landlab.components import FastscapeEroder, FlowAccumulator, DepressionFinderAndRouter
 import numpy as np
 from landlab import RasterModelGrid
+from landlab.io import write_esri_ascii
+import os
 
 
 class TopoModel:
-    def __init__(self, grid, K_sp, m_sp, n_sp, flow_director, rainfall_rate = None, rain_variability=False):
+    def __init__(self, grid, K_sp, m_sp, n_sp, flow_director, rainfall_rate=None, rain_variability=False):
         """
         Initializes the model using a PRE-CONFIGURED grid.
         It doesn't create the grid itself.
@@ -26,9 +28,8 @@ class TopoModel:
             self.fsc = FastscapeEroder(self.grid, K_sp, m_sp, n_sp, discharge_field='drainage_area')
         elif rain_variability == True:
             self.fsc = FastscapeEroder(self.grid, K_sp, m_sp, n_sp, discharge_field='surface_water__discharge')
-            if rainfall_rate is not None:
-                drainage_area = self.grid.at_node['drainage_area']  # m²
-                self.grid.at_node['water__unit_flux_in'] = np.ones_like(drainage_area) * rainfall_rate
+            # if rainfall_rate is not None:
+            self.grid.at_node['water__unit_flux_in'] = np.ones_like(self.grid.at_node['drainage_area']) * rainfall_rate
 
 
     def define_boundaries(self, grid, slope_direction):
@@ -70,7 +71,7 @@ class TopoModel:
         self.fsc.run_one_step(dt=dt)
 
 
-    def run_model(self, runtime, dt):
+    def run_model(self, runtime, dt, name):
         """Runs the model for a specified duration.
         
         Parameters:
@@ -83,5 +84,15 @@ class TopoModel:
         num_steps = int(runtime / dt)
         for i in range(num_steps):
             self.run_one_step(dt)
+            # # this is how you could save grid to ascii file, every step (or also put below for every 10th step)
+            # filename = str(os.getcwd() + '/' + name + '_step{}.asc'.format(i))
+            # write_esri_ascii(filename, self.grid, clobber = True)
             if i % 10 == 0: # Print progress
                 print(f"Step {i} of {num_steps}")
+                
+        filename = str(os.getcwd() + '/' + name + '_t{}.asc'.format(runtime))
+        write_esri_ascii(filename, self.grid, clobber = True)
+        
+        
+
+
