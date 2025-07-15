@@ -12,30 +12,44 @@ def create_noisy_landscape(rows, cols, cell_size=1000, rf=0.1):
     - rows (int): Number of rows in the grid.
     - cols (int): Number of columns in the grid.
     - cell_size (float): Spacing between nodes in meters.
+    - rf (float): Random factor to add noise to the landscape, as a percentage 
+        of the cell size.
 
     Returns:
     - grid (RasterModelGrid): A Landlab grid with random noise added to the elevation
     """
     grid = RasterModelGrid((rows, cols), xy_spacing=cell_size)
     z = grid.add_zeros('topographic__elevation', at='node')
-    z += np.random.rand(grid.number_of_nodes) * rf * cell_size  # Add 0-100m of noise
+    z += np.random.rand(grid.number_of_nodes) * rf * cell_size
     return grid
 
-def create_tilted_landscape(rows, cols, cell_size=1000, tilt=0.01, rf=0.1):
+def create_tilted_landscape(rows, cols, cell_size=1000, tilt=0.01, rf=0.1, tilt_direction='South'):
     """Creates a uniformly tilted grid.
     
     Parameters:
     - rows (int): Number of rows in the grid.
     - cols (int): Number of columns in the grid.
     - cell_size (float): Spacing between nodes in meters.
+    - rf (float): Random factor to add noise to the landscape, as a percentage 
+        of the cell size.
     - tilt (float): Tilt factor for the landscape.
+    - tilt_direction (str): Direction of the tilt ('North', 'South', 'East',
+        'West'). e.g., 'South' means the landscape slopes down towards the south.
     
     Returns:
     - grid (RasterModelGrid): A Landlab grid with a tilted landscape
     """
     grid = RasterModelGrid((rows, cols), xy_spacing=cell_size)
     z = grid.add_zeros('topographic__elevation', at='node')
-    z += grid.x_of_node * tilt  # Tilt the landscape along the x-axis
+    match tilt_direction:
+        case 'North':
+            z -= grid.y_of_node * tilt  # Tilt the landscape along the y-axis
+        case 'South':
+            z += grid.y_of_node * tilt  # Tilt the landscape along the y-axis
+        case 'East':
+            z -= grid.x_of_node * tilt  # Tilt the landscape along the x-axis
+        case 'West':        
+            z += grid.x_of_node * tilt  # Tilt the landscape along the x-axis
     z += np.random.rand(grid.number_of_nodes) * rf * cell_size # Add some noise
     return grid
 
@@ -46,8 +60,10 @@ def create_step_landscape(rows, cols, cell_size=1000, step_height=100.0, rf=0.1)
     Parameters:
     - rows (int): Number of rows in the grid.
     - cols (int): Number of columns in the grid.
-    - step_height (float): Height of the step in meters.
     - cell_size (float): Spacing between nodes in meters.
+    - step_height (float): Height of the step in meters.
+    - rf (float): Random factor to add noise to the landscape, as a percentage 
+        of the cell size.
 
     Returns:
     - grid (RasterModelGrid): A Landlab grid with a step landscape.
