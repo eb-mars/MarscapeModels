@@ -5,7 +5,7 @@ from rasterio.enums import Resampling
 from rasterio.warp import reproject
 
 # --- Functions to create various initial topographies with elevation patterns
-def create_noisy_landscape(rows, cols, cell_size=1000):
+def create_noisy_landscape(rows, cols, cell_size=1000, rf=0.1):
     """Creates a grid with simple random noise.
     
     Parameters:
@@ -18,10 +18,10 @@ def create_noisy_landscape(rows, cols, cell_size=1000):
     """
     grid = RasterModelGrid((rows, cols), xy_spacing=cell_size)
     z = grid.add_zeros('topographic__elevation', at='node')
-    z += np.random.rand(grid.number_of_nodes) * 100  # Add 0-100m of noise
+    z += np.random.rand(grid.number_of_nodes) * rf * cell_size  # Add 0-100m of noise
     return grid
 
-def create_tilted_landscape(rows, cols, cell_size=1000, tilt=0.01):
+def create_tilted_landscape(rows, cols, cell_size=1000, tilt=0.01, rf=0.1):
     """Creates a uniformly tilted grid.
     
     Parameters:
@@ -36,9 +36,10 @@ def create_tilted_landscape(rows, cols, cell_size=1000, tilt=0.01):
     grid = RasterModelGrid((rows, cols), xy_spacing=cell_size)
     z = grid.add_zeros('topographic__elevation', at='node')
     z += grid.x_of_node * tilt  # Tilt the landscape along the x-axis
+    z += np.random.rand(grid.number_of_nodes) * rf * cell_size # Add some noise
     return grid
 
-def create_step_landscape(rows, cols, cell_size=1000, step_height=100.0):
+def create_step_landscape(rows, cols, cell_size=1000, step_height=100.0, rf=0.1):
     """
     Creates a grid with a single vertical step fault. The right half of the grid is elevated by the step_height.
 
@@ -62,6 +63,8 @@ def create_step_landscape(rows, cols, cell_size=1000, step_height=100.0):
 
     # Set the elevation of those nodes to the step height
     z[right_side_nodes] = step_height
+
+    z += np.random.rand(grid.number_of_nodes) * rf * cell_size  # Add some noise
     
     return grid
 

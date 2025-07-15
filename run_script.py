@@ -1,5 +1,5 @@
 from model import TopoModel
-from make_topography import create_tilted_landscape, add_checkerboard_lithology
+from make_topography import *
 from landlab.plot import imshow_grid
 from load import load_params_txt
 import matplotlib.pyplot as plt
@@ -23,7 +23,7 @@ n_sp = params['n_sp']
 runoff_rate = params['runoff_rate']
 rain_variability = params['rain_variability']
 dt = params['dt']
-tsteps = params['tsteps']
+runtime = params['runtime']
 ## boundary conditions (True = closed, False = open);
 ## in mg.set_closed_boundaries(West, North, East, South);
 West = params['West']
@@ -33,10 +33,10 @@ South = params['South']
 
 # --- Experiment 1: Tilted landscape with two rock types ---
 # 1. Create the initial topography
-initial_grid = create_tilted_landscape(rows=nrows, cols=ncols, cell_size=cell_size, tilt=slope)
+initial_grid = create_tilted_landscape(rows=nrows, cols=ncols, cell_size=cell_size, rf=rf, tilt=slope)
 
 # 2. Add a lithology pattern to it
-final_grid = add_checkerboard_lithology(initial_grid)
+final_grid = add_uniform_lithology(initial_grid)
 
 # 2a. (optional) Create an array of rainfall to add at each step
 ##  find the value: -- GEL / time / grid number of nodes
@@ -47,7 +47,7 @@ model_run = TopoModel(final_grid, K_sp, m_sp, n_sp, flow_director)
 
 # 4. Run the model
 print("Starting model run...")
-model_run.run_model(runtime=dt*steps, dt=dt) # Run for 500,000 years
+model_run.run_model(runtime=runtime, dt=dt) # Run for 500,000 years
 print("Model run complete.")
 
 # 5. Visualize the result
