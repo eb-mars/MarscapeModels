@@ -233,5 +233,8 @@ def import_topography(filename, cell_size):
         dst_crs=src_crs,  # no CRS change, just resampling
         resampling=Resampling.bilinear  
     )
-    grid = RasterModelGrid((new_height, new_width), xy_spacing=cell_size, at='node')
+    grid = RasterModelGrid((new_height, new_width), xy_spacing=cell_size)
+    resampled = np.flipud(resampled)
+    grid.add_field("topographic__elevation", resampled.flatten(), at="node")
+
     return grid
