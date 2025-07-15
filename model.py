@@ -43,7 +43,7 @@ class TopoModel:
         South = "South" != slope_direction
         West = "West" != slope_direction
 
-        self.grid.set_closed_boundaries(North=North, East=East, South=South, West=West)
+        self.grid.set_closed_boundaries_at_grid_edges(right_is_closed=East, top_is_closed=North, left_is_closed=West, bottom_is_closed=South,)
 
     def run_one_step(self, dt):
         """Runs the model for a single timestep.
