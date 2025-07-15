@@ -5,7 +5,7 @@ from rasterio.enums import Resampling
 from rasterio.warp import reproject
 
 # --- Functions to create various initial topographies with elevation patterns
-def create_noisy_landscape(rows, cols, cell_size=1000, rf=0.1):
+def create_noisy_landscape(rows, cols, cell_size=1000, rf=0.1, seed=3):
     """Creates a grid with simple random noise.
     
     Parameters:
@@ -14,16 +14,18 @@ def create_noisy_landscape(rows, cols, cell_size=1000, rf=0.1):
     - cell_size (float): Spacing between nodes in meters.
     - rf (float): Random factor to add noise to the landscape, as a percentage 
         of the cell size.
+    - seed (int): Random seed for reproducibility.
 
     Returns:
     - grid (RasterModelGrid): A Landlab grid with random noise added to the elevation
     """
     grid = RasterModelGrid((rows, cols), xy_spacing=cell_size)
     z = grid.add_zeros('topographic__elevation', at='node')
+    np.random.seed(seed)
     z += np.random.rand(grid.number_of_nodes) * rf * cell_size
     return grid
 
-def create_tilted_landscape(rows, cols, cell_size=1000, tilt=0.01, rf=0.1, tilt_direction='South'):
+def create_tilted_landscape(rows, cols, cell_size=1000, tilt=0.01, rf=0.1, tilt_direction='South', seed=3):
     """Creates a uniformly tilted grid.
     
     Parameters:
@@ -35,25 +37,28 @@ def create_tilted_landscape(rows, cols, cell_size=1000, tilt=0.01, rf=0.1, tilt_
     - tilt (float): Tilt factor for the landscape.
     - tilt_direction (str): Direction of the tilt ('North', 'South', 'East',
         'West'). e.g., 'South' means the landscape slopes down towards the south.
-    
+    - seed (int): Random seed for reproducibility.
+        
     Returns:
     - grid (RasterModelGrid): A Landlab grid with a tilted landscape
     """
     grid = RasterModelGrid((rows, cols), xy_spacing=cell_size)
     z = grid.add_zeros('topographic__elevation', at='node')
-    match tilt_direction:
-        case 'North':
-            z -= grid.y_of_node * tilt  # Tilt the landscape along the y-axis
-        case 'South':
-            z += grid.y_of_node * tilt  # Tilt the landscape along the y-axis
-        case 'East':
-            z -= grid.x_of_node * tilt  # Tilt the landscape along the x-axis
-        case 'West':        
-            z += grid.x_of_node * tilt  # Tilt the landscape along the x-axis
+    if tilt_direction == 'North':
+        z -= grid.y_of_node * tilt  # Tilt the landscape along the y-axis
+    elif tilt_direction == 'South':
+        z += grid.y_of_node * tilt  # Tilt the landscape along the y-axis
+    elif tilt_direction == 'East':
+        z -= grid.x_of_node * tilt  # Tilt the landscape along the x-axis
+    elif tilt_direction == 'West':
+        z += grid.x_of_node * tilt  # Tilt the landscape along the x-axis
+    else:
+        raise ValueError("Invalid tilt direction. Choose from 'North', 'South', 'East', or 'West'.")
+    np.random.seed(seed)
     z += np.random.rand(grid.number_of_nodes) * rf * cell_size # Add some noise
     return grid
 
-def create_step_landscape(rows, cols, cell_size=1000, step_height=100.0, rf=0.1):
+def create_step_landscape(rows, cols, cell_size=1000, step_height=100.0, rf=0.1, seed=3):
     """
     Creates a grid with a single vertical step fault. The right half of the grid is elevated by the step_height.
 
@@ -64,7 +69,8 @@ def create_step_landscape(rows, cols, cell_size=1000, step_height=100.0, rf=0.1)
     - step_height (float): Height of the step in meters.
     - rf (float): Random factor to add noise to the landscape, as a percentage 
         of the cell size.
-
+    - seed (int): Random seed for reproducibility.
+        
     Returns:
     - grid (RasterModelGrid): A Landlab grid with a step landscape.
     """
@@ -80,6 +86,7 @@ def create_step_landscape(rows, cols, cell_size=1000, step_height=100.0, rf=0.1)
     # Set the elevation of those nodes to the step height
     z[right_side_nodes] = step_height
 
+    np.random.seed(seed)
     z += np.random.rand(grid.number_of_nodes) * rf * cell_size  # Add some noise
     
     return grid
