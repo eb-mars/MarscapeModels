@@ -4,9 +4,7 @@ from landlab.plot import imshow_grid, imshow_grid_at_node
 from load import load_params_txt
 import matplotlib.pyplot as plt
 
-# --- Experiment 1: Tilted landscape with two rock types ---
-
-#### LOAD PARAMETERS FROM PARAMETER FILE
+## LOAD PARAMETERS FROM PARAMETER FILE
 params = load_params_txt() ## parameter dictionary
 name = params['model_name']
 seed = params['seed']
@@ -32,7 +30,6 @@ West = params['West']
 North = params['North']
 East = params['East']
 South = params['South']
-
 
 # --- Experiment 1: Tilted landscape with two rock types ---
 # 1. Create the initial topography
