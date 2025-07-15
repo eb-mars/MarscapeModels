@@ -1,6 +1,7 @@
 from model import TopoModel
 from make_topography import *
-from landlab.plot import imshow_grid, imshow_grid_at_node
+from landlab.plot import imshow_grid
+from landlab.components import ChannelProfiler
 from load import load_params_txt
 import matplotlib.pyplot as plt
 
@@ -53,6 +54,8 @@ print("Starting model run...")
 model_run.run_model(runtime, dt, name)
 print("Model run complete.")
 
+
+
 # 5. Visualize the result
 imshow_grid(
     model_run.grid, 
@@ -63,9 +66,34 @@ imshow_grid(
 plt.title("Final Topography")
 plt.show()
 
+
+## CHANNEL PROFILER - handy visualization and channel node ID / channel measurement tool
+# plot with channels shown
+prf = ChannelProfiler(
+    model_run.grid,
+    main_channel_only=True,
+    number_of_watersheds=None,
+    minimum_channel_threshold=model_run.grid.dy*model_run.grid.dx,
+)
+prf.run_one_step()
+
+plt.figure(1)
+prf.plot_profiles_in_map_view()
+plt.show()
+
+## to access data about the channels, e.g. where are node IDs;
+outlet_nodes = prf.data_structure.keys() # node IDs of the outlet nodes
+prf.data_structure[list(prf.data_structure.keys())[0]].keys(); # node IDs representing the upstream & downstream segments of the river channel, for the first outlet node
+prf.data_structure[list(prf.data_structure.keys())[0]][list(prf.data_structure[list(prf.data_structure.keys())[0]].keys())[0]]["ids"] ## node IDs representing the whole channel, for the channel of the FIRST outlet node
+prf.data_structure[list(prf.data_structure.keys())[0]][list(prf.data_structure[list(prf.data_structure.keys())[0]].keys())[0]]["distances"] ## distances between segements for the whole channel, for the channel of the  outlet node
+
+prf.data_structure[list(prf.data_structure.keys())[1]].keys() # node IDs representing the upstream & downstream segments of the river channel, for the SECOND outlet node
+
+
+
 # 6. Optional Checks plotting other data on the grid
-# imshow_grid_at_node(
-#     model_run.grid, 
+# imshow_grid(
+#     model_run.grid, at='node',
 #     'drainage_area',
 #     cmap='terrain',
 #     grid_units=('m', 'm')
@@ -74,7 +102,7 @@ plt.show()
 # plt.show()
 
 # imshow_grid_at_node(
-#     model_run.grid, 
+#     model_run.grid,  at='node',
 #     'surface_water__discharge',
 #     cmap='terrain',
 #     grid_units=('m', 'm')
@@ -83,7 +111,7 @@ plt.show()
 # plt.show()
 
 # imshow_grid_at_node(
-#     model_run.grid, 
+#     model_run.grid,  at='node',
 #     'K_sp',
 #     cmap='terrain',
 #     grid_units=('m', 'm')
@@ -92,7 +120,7 @@ plt.show()
 # plt.show()
 
 # imshow_grid_at_node(
-#     model_run.grid, 
+#     model_run.grid,  at='node',
 #     'water__unit_flux_in',
 #     cmap='terrain',
 #     grid_units=('m', 'm')
