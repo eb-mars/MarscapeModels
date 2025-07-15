@@ -1,4 +1,5 @@
 from landlab.components import FastscapeEroder, FlowAccumulator, DepressionFinderAndRouter
+from landlab import RasterModelGrid
 
 
 class TopoModel:
@@ -29,6 +30,8 @@ class TopoModel:
     def define_boundaries(self, grid, slope_direction):
 
         """Defines the boundaries of the grid.
+        Sets all boundaries/edges to closed, except the one downstream of slope, 
+        which is set as a fixed gradient boundary (BC_NODE_IS_FIXED_GRADIENT)
         
         Parameters:
         - grid (RasterModelGrid): The grid to set boundaries for.
@@ -43,7 +46,10 @@ class TopoModel:
         South = "South" != slope_direction
         West = "West" != slope_direction
 
-        self.grid.set_closed_boundaries_at_grid_edges(right_is_closed=East, top_is_closed=North, left_is_closed=West, bottom_is_closed=South,)
+        self.grid.set_closed_boundaries_at_grid_edges(right_is_closed=East, top_is_closed=North, left_is_closed=West, bottom_is_closed=South)
+        # self.grid.status_at_node[self.grid.fixed_value_boundary_nodes] = self.grid.BC_NODE_IS_FIXED_GRADIENT
+        self.grid.status_at_node[self.grid.fixed_value_boundary_nodes] = self.grid.BC_NODE_IS_FIXED_VALUE
+            
 
     def run_one_step(self, dt):
         """Runs the model for a single timestep.
