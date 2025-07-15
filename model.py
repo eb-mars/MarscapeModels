@@ -26,6 +26,25 @@ class TopoModel:
             self.fsc = FastscapeEroder(self.grid, K_sp, m_sp, n_sp, discharge_field='surface_water__discharge')
 
 
+    def define_boundaries(self, grid, slope_direction):
+
+        """Defines the boundaries of the grid.
+        
+        Parameters:
+        - grid (RasterModelGrid): The grid to set boundaries for.
+        - North, East, South, West (bool): True for closed boundary, False for open boundary.
+        """
+
+        self.grid = grid
+        
+        #Slope direction tells us which boundary should be open. False means open.
+        North = "North" != slope_direction
+        East = "East" != slope_direction
+        South = "South" != slope_direction
+        West = "West" != slope_direction
+
+        self.grid.set_closed_boundaries(North=North, East=East, South=South, West=West)
+
     def run_one_step(self, dt):
         """Runs the model for a single timestep.
         

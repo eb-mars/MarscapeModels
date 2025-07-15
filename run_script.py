@@ -45,6 +45,9 @@ final_grid = add_uniform_lithology(initial_grid)
 # 3. Create a model instance with the prepared grid
 model_run = TopoModel(final_grid, K_sp, m_sp, n_sp, flow_director)
 
+# 3a. Define the boundaries of the grid
+model_run.define_boundaries(final_grid, tilt_direction)
+
 # 4. Run the model
 print("Starting model run...")
 model_run.run_model(runtime=runtime, dt=dt) # Run for 500,000 years
