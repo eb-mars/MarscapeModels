@@ -1,4 +1,5 @@
 from landlab.components import FastscapeEroder, FlowAccumulator, DepressionFinderAndRouter
+import numpy as np
 
 
 class TopoModel:
@@ -36,7 +37,7 @@ class TopoModel:
         """
 
         self.grid = grid
-        
+
         #Slope direction tells us which boundary should be open. False means open.
         North = "North" != slope_direction
         East = "East" != slope_direction
@@ -45,24 +46,42 @@ class TopoModel:
 
         self.grid.set_closed_boundaries_at_grid_edges(right_is_closed=East, top_is_closed=North, left_is_closed=West, bottom_is_closed=South,)
 
-    def run_one_step(self, dt):
-        """Runs the model for a single timestep.
-        
+    def run_one_step(self, dt, rainfall_rate=None):
+        """
+        Run one timestep of landscape evolution.
+
         Parameters:
-        - dt (float): The duration of the timestep in years.
-        """  
+        - dt (float): Duration of the timestep in years.
+        - rainfall_rate (float, optional): Rainfall rate in m/year.
+        If provided, discharge is computed as Q = rainfall_rate * drainage_area.
+        If None, we go with LandLab's default
+        """
+        # Route flow and handle depressions
         self.fr.run_one_step()
         self.df.map_depressions()
+
+        # Compute discharge if rainfall_rate is specified
+        if rainfall_rate is not None:
+            drainage_area = self.grid.at_node['drainage_area']  # m²
+            discharge = rainfall_rate * drainage_area           # m³/year
+            self.grid.at_node['surface_water__discharge'] = discharge
+
+        # Erode based on discharge
         self.fsc.run_one_step(dt=dt)
 
-    def run_model(self, runtime, dt=1000):
+
+    def run_model(self, runtime, dt=1000, rainfall_rate = None):
         """Runs the model for a specified duration.
         
         Parameters:
         - runtime (float): Total time to run the model in years.
-        - dt (float): Duration of each timestep in years (default is 1000)."""
+        - dt (float): Duration of each timestep in years (default is 1000).
+        - rainfall_rate (float, optional): Rainfall rate in m/year. 
+            If provided, discharge is computed as Q = rainfall_rate * drainage_area.
+            If None, we go with LandLab's default"""
+        
         num_steps = int(runtime / dt)
         for i in range(num_steps):
-            self.run_one_step(dt)
+            self.run_one_step(dt, rainfall_rate)
             if i % 10 == 0: # Print progress
                 print(f"Step {i} of {num_steps}")
