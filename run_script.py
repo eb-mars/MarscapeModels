@@ -1,6 +1,6 @@
 from model import TopoModel
 from make_topography import *
-from landlab.plot import imshow_grid
+from landlab.plot import imshow_grid, imshow_grid_at_node
 from load import load_params_txt
 import matplotlib.pyplot as plt
 
@@ -23,7 +23,7 @@ m_sp = params['m_sp']
 n_sp = params['n_sp'] 
 runoff_rate = params['runoff_rate']
 rain_variability = params['rain_variability']
-rainfall_rate = ['rainfall_rate']
+rainfall_rate = params['rainfall_rate']
 dt = params['dt']
 runtime = params['runtime']
 ## boundary conditions (True = closed, False = open);
@@ -53,7 +53,7 @@ model_run.define_boundaries(final_grid, tilt_direction)
 
 # 4. Run the model
 print("Starting model run...")
-model_run.run_model(runtime, dt) # Run for 500,000 years
+model_run.run_model(runtime, dt, name)
 print("Model run complete.")
 
 # 5. Visualize the result
@@ -65,3 +65,45 @@ imshow_grid(
 )
 plt.title("Final Topography")
 plt.show()
+
+# 6. Optional Checks plotting other data on the grid
+# imshow_grid_at_node(
+#     model_run.grid, 
+#     'drainage_area',
+#     cmap='terrain',
+#     grid_units=('m', 'm')
+# )
+# plt.title("Final Drainage Area")
+# plt.show()
+
+# imshow_grid_at_node(
+#     model_run.grid, 
+#     'surface_water__discharge',
+#     cmap='terrain',
+#     grid_units=('m', 'm')
+# )
+# plt.title("Final surface Water Discharge")
+# plt.show()
+
+# imshow_grid_at_node(
+#     model_run.grid, 
+#     'K_sp',
+#     cmap='terrain',
+#     grid_units=('m', 'm')
+# )
+# plt.title("Final K_Sp")
+# plt.show()
+
+# imshow_grid_at_node(
+#     model_run.grid, 
+#     'water__unit_flux_in',
+#     cmap='terrain',
+#     grid_units=('m', 'm')
+# )
+# plt.title("Final water unit flux in")
+# plt.show()
+
+
+
+
+
