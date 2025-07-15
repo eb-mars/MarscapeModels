@@ -52,7 +52,7 @@ class TopoModel:
         self.grid.status_at_node[self.grid.fixed_value_boundary_nodes] = self.grid.BC_NODE_IS_FIXED_VALUE
             
 
-    def run_one_step(self, dt, rainfall_rate = None):
+    def run_one_step(self, dt, rainfall_rate):
         """Runs the model for a single timestep.
         
         Parameters:
@@ -68,14 +68,15 @@ class TopoModel:
         # Compute discharge if rainfall_rate is specified
         if rainfall_rate is not None:
             drainage_area = self.grid.at_node['drainage_area']  # m²
-            discharge = rainfall_rate * drainage_area           # m³/year
-            self.grid.at_node['surface_water__discharge'] = discharge
+            # discharge = rainfall_rate * drainage_area           # m³/year
+            # self.grid.at_node['surface_water__discharge'] = discharge
+            self.grid.at_node['water__unit_flux_in'] = np.ones_like(drainage_area) * rainfall_rate
 
         # Erode based on discharge
         self.fsc.run_one_step(dt=dt)
 
 
-    def run_model(self, runtime, dt=1000, rainfall_rate = None):
+    def run_model(self, runtime, dt, rainfall_rate):
         """Runs the model for a specified duration.
         
         Parameters:
