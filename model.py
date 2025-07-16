@@ -6,17 +6,18 @@ import os
 
 
 class TopoModel:
-    def __init__(self, grid, K_sp, m_sp, n_sp, flow_director, rainfall_rate=None, rain_variability=False):
+    def __init__(self, grid, K_sp, m_sp, n_sp, flow_director, rain_variability=False):
         """
         Initializes the model using a PRE-CONFIGURED grid.
         It doesn't create the grid itself.
 
         Parameters:
-        - grid (RasterModelGrid): The grid to use for the model.
-        - K_sp: erodability.
-        - m_sp: stream power exponent for drainage area.
-        - n_sp: stream powerexponent for slope.
-
+            grid (RasterModelGrid): The grid to use for the model.
+            K_sp: erodability.
+            m_sp: stream power exponent for drainage area.
+            n_sp: stream powerexponent for slope.
+            flow_director: The flow director to use for flow routing.
+            rain_variability (bool): If True, rainfall rate varies across the grid.
         """
         self.grid = grid
         
@@ -29,8 +30,7 @@ class TopoModel:
         elif rain_variability == True:
             self.fsc = FastscapeEroder(self.grid, K_sp, m_sp, n_sp, discharge_field='surface_water__discharge')
             # if rainfall_rate is not None:
-            self.grid.at_node['water__unit_flux_in'] = np.ones_like(self.grid.at_node['drainage_area']) * rainfall_rate
-
+            # self.grid.at_node['water__unit_flux_in'] = np.ones_like(self.grid.at_node['drainage_area']) * rainfall_rate
 
     def define_boundaries(self, grid, slope_direction):
 
@@ -39,10 +39,9 @@ class TopoModel:
         which is set as a fixed gradient boundary (BC_NODE_IS_FIXED_GRADIENT)
         
         Parameters:
-        - grid (RasterModelGrid): The grid to set boundaries for.
-        - North, East, South, West (bool): True for closed boundary, False for open boundary.
+        grid (RasterModelGrid): The grid to set boundaries for.
+        slope_direction (str): Direction of the slope, which determines which boundary is open.
         """
-
         self.grid = grid
 
         #Slope direction tells us which boundary should be open. False means open.
@@ -60,10 +59,7 @@ class TopoModel:
         """Runs the model for a single timestep.
         
         Parameters:
-        - dt (float): Duration of the timestep in years.
-        - rainfall_rate (float, optional): Rainfall rate in m/year.
-        If provided, discharge is computed as Q = rainfall_rate * drainage_area.
-        If None, we go with LandLab's default
+            dt (float): Duration of the timestep in years.
         """
         # Route flow and handle depressions
         self.fr.run_one_step()
@@ -75,11 +71,10 @@ class TopoModel:
         """Runs the model for a specified duration.
         
         Parameters:
-        - runtime (float): Total time to run the model in years.
-        - dt (float): Duration of each timestep in years (default is 1000).
-        - rainfall_rate (float, optional): Rainfall rate in m/year. 
-            If provided, discharge is computed as Q = rainfall_rate * drainage_area.
-            If None, we go with LandLab's default"""
+            runtime (float): Total time to run the model in years.
+            dt (float): Duration of each timestep in years (default is 1000).
+            name (str): Name of the model run, used for saving output files.
+        """
         
         num_steps = int(runtime / dt)
         for i in range(num_steps):

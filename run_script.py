@@ -1,5 +1,6 @@
 from model import TopoModel
 from make_topography import *
+from make_precip import *
 from landlab.plot import imshow_grid
 from landlab.components import ChannelProfiler
 from load import load_params_txt
@@ -34,27 +35,26 @@ South = params['South']
 
 # --- Experiment 1: Tilted landscape with two rock types ---
 # 1. Create the initial topography
-initial_grid = create_tilted_landscape(rows=nrows, cols=ncols, cell_size=cell_size, rf=rf, tilt=slope, tilt_direction=tilt_direction, seed=seed)
+grid = create_tilted_landscape(rows=nrows, cols=ncols, cell_size=cell_size, rf=rf, tilt=slope, tilt_direction=tilt_direction, seed=seed)
 
 # 2. Add a lithology pattern to it
-final_grid = add_uniform_lithology(initial_grid, erodibility=K_sp)
+grid = add_uniform_lithology(grid, erodibility=K_sp)
 
 # 2a. (optional) Create an array of rainfall to add at each step
 ##  find the value: -- GEL / time / grid number of nodes
 ##  create array of same size as grid, with every entry = the value above. 
+grid = add_uniform_precip(grid, precipitation_rate=rainfall_rate)
 
 # 3. Create a model instance with the prepared grid
-model_run = TopoModel(final_grid, K_sp, m_sp, n_sp, flow_director, rainfall_rate = rainfall_rate, rain_variability = rain_variability)
+model_run = TopoModel(grid, K_sp, m_sp, n_sp, flow_director, rain_variability = rain_variability)
 
 # 3a. Define the boundaries of the grid
-model_run.define_boundaries(final_grid, tilt_direction)
+model_run.define_boundaries(grid, tilt_direction)
 
 # 4. Run the model
 print("Starting model run...")
 model_run.run_model(runtime, dt, name)
 print("Model run complete.")
-
-
 
 # 5. Visualize the result
 imshow_grid(
