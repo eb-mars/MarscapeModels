@@ -237,4 +237,16 @@ def import_topography(filename, cell_size):
     resampled = np.flipud(resampled)
     grid.add_field("topographic__elevation", resampled.flatten(), at="node")
 
+    valid_nodes = ~np.isnan(resampled)
+    
+    CLOSED_BOUNDARY = 4
+    CORE_NODE = 0
+
+    # Set everything erodable
+    grid.status_at_node[:] = CORE_NODE
+
+    # Close ocean nodes
+    grid.status_at_node[~valid_nodes.flatten()] = CLOSED_BOUNDARY
+
+
     return grid
