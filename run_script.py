@@ -1,6 +1,7 @@
 from model import TopoModel
 from make_topography import *
 from make_precip import *
+from analyse_streams import *
 from landlab.plot import imshow_grid
 from landlab.components import ChannelProfiler
 from load import load_params_txt
@@ -45,20 +46,23 @@ grid = add_uniform_lithology(grid, erodibility=K_sp)
 ##  create array of same size as grid, with every entry = the value above. 
 grid = add_uniform_precip(grid, precipitation_rate=rainfall_rate)
 
+# 2b. Store the initial topography to calculate erosion later
+grid.at_node['initial_topographic__elevation'] = grid.at_node['topographic__elevation'].copy()
+
 # 3. Create a model instance with the prepared grid
-model_run = TopoModel(grid, K_sp, m_sp, n_sp, flow_director, rain_variability = rain_variability)
+model = TopoModel(grid, K_sp, m_sp, n_sp, flow_director, rain_variability = rain_variability)
 
 # 3a. Define the boundaries of the grid
-model_run.define_boundaries(grid, tilt_direction)
+model.define_boundaries(grid, tilt_direction)
 
 # 4. Run the model
 print("Starting model run...")
-model_run.run_model(runtime, dt, name)
+model.run_model(runtime, dt, name)
 print("Model run complete.")
 
 # 5. Visualize the result
 imshow_grid(
-    model_run.grid, 
+    model.grid, 
     'topographic__elevation',
     cmap='terrain',
     grid_units=('m', 'm')
@@ -66,14 +70,13 @@ imshow_grid(
 plt.title("Final Topography")
 plt.show()
 
-
 ## CHANNEL PROFILER - handy visualization and channel node ID / channel measurement tool
 # plot with channels shown
 prf = ChannelProfiler(
-    model_run.grid,
-    main_channel_only=True,
+    model.grid,
+    main_channel_only=False,
     number_of_watersheds=None,
-    minimum_channel_threshold=model_run.grid.dy*model_run.grid.dx,
+    minimum_channel_threshold=model.grid.dy*model.grid.dx,
 )
 prf.run_one_step()
 
@@ -89,45 +92,60 @@ prf.data_structure[list(prf.data_structure.keys())[0]][list(prf.data_structure[l
 
 prf.data_structure[list(prf.data_structure.keys())[1]].keys() # node IDs representing the upstream & downstream segments of the river channel, for the SECOND outlet node
 
+# Run FlowAccumulator to calculate discharge on FINAL topography
+model.fr.run_one_step() 
+channel_data = get_channel_erosion_and_discharge(model.grid, prf)
 
+# Get data for the first channel
+first_outlet = list(channel_data.keys())[0]
+erosion = channel_data[first_outlet]['erosion_depth']
+discharge = channel_data[first_outlet]['discharge']
+
+# Create plots
+plt.figure(2, figsize=(12, 5))
+
+# Plot 1: Erosion Depth vs. Distance
+plt.subplot(1, 2, 1)
+plt.plot(channel_data[first_outlet]['distance_from_outlet'], erosion, 'b-')
+plt.xlabel('Distance from Outlet (m)')
+plt.ylabel('Erosional Depth (m)')
+plt.title('Erosion Profile')
+plt.grid(True)
+
+# Plot 2: Erosion Depth vs. Discharge (Log-Log Scale)
+plt.subplot(1, 2, 2)
+# Filter out points with zero or negative erosion/discharge for log plot
+# valid_points = (erosion > 0) & (discharge > 0)
+# plt.scatter(discharge[valid_points], erosion[valid_points], alpha=0.6)
+plt.scatter(discharge, erosion, alpha=0.6)
+# plt.xscale('log')
+# plt.yscale('log')
+plt.xlabel('Discharge ($m^3/yr$)')
+plt.ylabel('Erosional Depth (m)')
+plt.title('Erosion vs. Discharge')
+plt.grid(True, which="both", ls="--")
+
+plt.tight_layout()
+plt.show()
 
 # 6. Optional Checks plotting other data on the grid
-# imshow_grid(
-#     model_run.grid, at='node',
-#     'drainage_area',
-#     cmap='terrain',
-#     grid_units=('m', 'm')
-# )
-# plt.title("Final Drainage Area")
-# plt.show()
+imshow_grid(
+    model.grid,
+    'drainage_area',
+    cmap='terrain',
+    grid_units=('m', 'm')
+)
+plt.title("Final Drainage Area")
+plt.show()
 
-# imshow_grid_at_node(
-#     model_run.grid,  at='node',
-#     'surface_water__discharge',
-#     cmap='terrain',
-#     grid_units=('m', 'm')
-# )
-# plt.title("Final surface Water Discharge")
-# plt.show()
-
-# imshow_grid_at_node(
-#     model_run.grid,  at='node',
-#     'K_sp',
-#     cmap='terrain',
-#     grid_units=('m', 'm')
-# )
-# plt.title("Final K_Sp")
-# plt.show()
-
-# imshow_grid_at_node(
-#     model_run.grid,  at='node',
-#     'water__unit_flux_in',
-#     cmap='terrain',
-#     grid_units=('m', 'm')
-# )
-# plt.title("Final water unit flux in")
-# plt.show()
-
+imshow_grid(
+    model.grid,
+    'surface_water__discharge',
+    cmap='terrain',
+    grid_units=('m', 'm')
+)
+plt.title("Final surface Water Discharge")
+plt.show()
 
 
 

@@ -39,8 +39,8 @@ class TopoModel:
         which is set as a fixed gradient boundary (BC_NODE_IS_FIXED_GRADIENT)
         
         Parameters:
-        grid (RasterModelGrid): The grid to set boundaries for.
-        slope_direction (str): Direction of the slope, which determines which boundary is open.
+            grid (RasterModelGrid): The grid to set boundaries for.
+            slope_direction (str): Direction of the slope, which determines which boundary is open.
         """
         self.grid = grid
 
