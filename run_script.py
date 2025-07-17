@@ -76,7 +76,7 @@ prf = ChannelProfiler(
     model.grid,
     main_channel_only=False,
     number_of_watersheds=None,
-    minimum_channel_threshold=model.grid.dy*model.grid.dx,
+    minimum_channel_threshold=model.grid.dy*model.grid.dx*20,
 )
 prf.run_one_step()
 
@@ -84,16 +84,21 @@ plt.figure(1)
 prf.plot_profiles_in_map_view()
 plt.show()
 
-## to access data about the channels, e.g. where are node IDs;
-outlet_nodes = prf.data_structure.keys() # node IDs of the outlet nodes
-prf.data_structure[list(prf.data_structure.keys())[0]].keys(); # node IDs representing the upstream & downstream segments of the river channel, for the first outlet node
-prf.data_structure[list(prf.data_structure.keys())[0]][list(prf.data_structure[list(prf.data_structure.keys())[0]].keys())[0]]["ids"] ## node IDs representing the whole channel, for the channel of the FIRST outlet node
-prf.data_structure[list(prf.data_structure.keys())[0]][list(prf.data_structure[list(prf.data_structure.keys())[0]].keys())[0]]["distances"] ## distances between segements for the whole channel, for the channel of the  outlet node
+plt.figure(2)
+prf.plot_profiles()
+plt.show()
 
-prf.data_structure[list(prf.data_structure.keys())[1]].keys() # node IDs representing the upstream & downstream segments of the river channel, for the SECOND outlet node
+## to access data about the channels, e.g. where are node IDs;
+# outlet_nodes = prf.data_structure.keys() # node IDs of the outlet nodes
+# prf.data_structure[list(prf.data_structure.keys())[0]].keys(); # node IDs representing the upstream & downstream segments of the river channel, for the first outlet node
+# prf.data_structure[list(prf.data_structure.keys())[0]][list(prf.data_structure[list(prf.data_structure.keys())[0]].keys())[0]]["ids"] ## node IDs representing the whole channel, for the channel of the FIRST outlet node
+# prf.data_structure[list(prf.data_structure.keys())[0]][list(prf.data_structure[list(prf.data_structure.keys())[0]].keys())[0]]["distances"] ## distances between segements for the whole channel, for the channel of the  outlet node
+
+# prf.data_structure[list(prf.data_structure.keys())[1]].keys() # node IDs representing the upstream & downstream segments of the river channel, for the SECOND outlet node
 
 # Run FlowAccumulator to calculate discharge on FINAL topography
 model.fr.run_one_step() 
+model.df.map_depressions()  # Ensure depressions are handled
 channel_data = get_channel_erosion_and_discharge(model.grid, prf)
 
 # Get data for the first channel
@@ -102,7 +107,7 @@ erosion = channel_data[first_outlet]['erosion_depth']
 discharge = channel_data[first_outlet]['discharge']
 
 # Create plots
-plt.figure(2, figsize=(12, 5))
+plt.figure(3, figsize=(12, 5))
 
 # Plot 1: Erosion Depth vs. Distance
 plt.subplot(1, 2, 1)
