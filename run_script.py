@@ -57,7 +57,8 @@ model.define_boundaries(grid, tilt_direction)
 
 # 4. Run the model
 print("Starting model run...")
-model.run_model(runtime, dt, name)
+# model.run_model(runtime, dt, name)
+model.run_model_with_animation(runtime, dt)
 print("Model run complete.")
 
 # 5. Visualize the result
@@ -134,24 +135,20 @@ plt.tight_layout()
 plt.show()
 
 # 6. Optional Checks plotting other data on the grid
-imshow_grid(
-    model.grid,
-    'drainage_area',
-    cmap='terrain',
-    grid_units=('m', 'm')
-)
-plt.title("Final Drainage Area")
-plt.show()
+# imshow_grid(
+#     model.grid,
+#     'drainage_area',
+#     cmap='terrain',
+#     grid_units=('m', 'm')
+# )
+# plt.title("Final Drainage Area")
+# plt.show()
 
-imshow_grid(
-    model.grid,
-    'surface_water__discharge',
-    cmap='terrain',
-    grid_units=('m', 'm')
-)
-plt.title("Final surface Water Discharge")
-plt.show()
-
-
-
-
+# imshow_grid(
+#     model.grid,
+#     'surface_water__discharge',
+#     cmap='terrain',
+#     grid_units=('m', 'm')
+# )
+# plt.title("Final surface Water Discharge")
+# plt.show()
