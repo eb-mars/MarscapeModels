@@ -77,7 +77,7 @@ prf = ChannelProfiler(
     model.grid,
     main_channel_only=False,
     number_of_watersheds=None,
-    minimum_channel_threshold=model.grid.dy*model.grid.dx*20,
+    minimum_channel_threshold=1000,
 )
 prf.run_one_step()
 
@@ -103,16 +103,16 @@ model.df.map_depressions()  # Ensure depressions are handled
 channel_data = get_channel_erosion_and_discharge(model.grid, prf)
 
 # Get data for the first channel
-first_outlet = list(channel_data.keys())[0]
-erosion = channel_data[first_outlet]['erosion_depth']
-discharge = channel_data[first_outlet]['discharge']
+# first_outlet = list(channel_data.keys())[0]
+erosion = channel_data['erosion_depth']
+discharge = channel_data['discharge']
 
 # Create plots
 plt.figure(3, figsize=(12, 5))
 
 # Plot 1: Erosion Depth vs. Distance
 plt.subplot(1, 2, 1)
-plt.plot(channel_data[first_outlet]['distance_from_outlet'], erosion, 'b-')
+plt.scatter(channel_data['distance_from_outlet'], erosion, alpha=0.6)
 plt.xlabel('Distance from Outlet (m)')
 plt.ylabel('Erosional Depth (m)')
 plt.title('Erosion Profile')
@@ -124,12 +124,12 @@ plt.subplot(1, 2, 2)
 # valid_points = (erosion > 0) & (discharge > 0)
 # plt.scatter(discharge[valid_points], erosion[valid_points], alpha=0.6)
 plt.scatter(discharge, erosion, alpha=0.6)
-# plt.xscale('log')
-# plt.yscale('log')
+plt.xscale('log')
+plt.yscale('log')
 plt.xlabel('Discharge ($m^3/yr$)')
 plt.ylabel('Erosional Depth (m)')
 plt.title('Erosion vs. Discharge')
-plt.grid(True, which="both", ls="--")
+plt.grid(True)
 
 plt.tight_layout()
 plt.show()

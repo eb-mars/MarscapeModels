@@ -33,29 +33,33 @@ def get_channel_erosion_and_discharge(grid, profiler,
     erosion_depth_field = grid.at_node[initial_topo] - grid.at_node['topographic__elevation']
 
     # Iterate through channels and extract data
-    channel_data = {}
+    # channel_data = {}
+    nodes = []
+    distances = []
+    channel_erosion = []
+    channel_discharge = []
     for outlet_node, segments in profiler.data_structure.items():
-        all_nodes = []
-        all_distances = []
-        
         # Simply extend the lists with data from each segment
         for segment_data in segments.values():
-            all_nodes.extend(segment_data['ids'])
-            all_distances.extend(segment_data['distances'])
+            segment_nodes = np.array(segment_data['ids'], dtype=int)
+            nodes.extend(segment_nodes)
+            distances.extend(segment_data['distances'])
+            channel_erosion.extend(erosion_depth_field[segment_nodes])
+            channel_discharge.extend(grid.at_node[discharge_field][segment_nodes])
         
         # Convert to numpy arrays
-        distance_from_outlet = np.array(all_distances)
-        all_nodes = np.array(all_nodes, dtype=int)
+        # distance_from_outlet = np.array(all_distances)
+        # all_nodes = np.array(all_nodes, dtype=int)
 
-        # Get erosion and discharge for the channel nodes
-        channel_erosion = erosion_depth_field[all_nodes]
-        channel_discharge = grid.at_node[discharge_field][all_nodes]
+        # # Get erosion and discharge for the channel nodes
+        # channel_erosion = erosion_depth_field[all_nodes]
+        # channel_discharge = grid.at_node[discharge_field][all_nodes]
 
         # Store results
-        channel_data[outlet_node] = {
-            'nodes': all_nodes,
-            'distance_from_outlet': distance_from_outlet,
-            'erosion_depth': channel_erosion,
-            'discharge': channel_discharge,
-        }
+    channel_data = {
+        'nodes': nodes,
+        'distance_from_outlet': distances,
+        'erosion_depth': channel_erosion,
+        'discharge': channel_discharge,
+    }
     return channel_data

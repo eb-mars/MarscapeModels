@@ -5,7 +5,7 @@ nrows: 40
 ncols: 80
 cell_size: 10.
 slope: 0.003
-rf: 0.1
+rf: 0.05
 tilt_direction: East
 West: True
 North: True
@@ -14,11 +14,11 @@ South: True
 #configure model run params
 flow_director: "D8"
 K_sp: 0.0001
-n_sp: 0.5
-m_sp: 0.7
+n_sp: 0.7
+m_sp: 0.5
 runoff_rate: 1.0
 dt: 10
 runtime: 1000
 rain_variability: True
-rainfall_rate: 0.1
+rainfall_rate: 0.01
 
