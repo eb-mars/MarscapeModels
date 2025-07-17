@@ -3,7 +3,9 @@ import numpy as np
 from landlab import RasterModelGrid
 from landlab.io import write_esri_ascii
 import os
-
+import matplotlib.pyplot as plt
+from landlab.plot import imshow_grid
+from matplotlib.animation import FuncAnimation
 
 class TopoModel:
     def __init__(self, grid, K_sp, m_sp, n_sp, flow_director, rain_variability=False):
@@ -54,7 +56,6 @@ class TopoModel:
         # self.grid.status_at_node[self.grid.fixed_value_boundary_nodes] = self.grid.BC_NODE_IS_FIXED_GRADIENT
         self.grid.status_at_node[self.grid.fixed_value_boundary_nodes] = self.grid.BC_NODE_IS_FIXED_VALUE
             
-
     def run_one_step(self, dt):
         """Runs the model for a single timestep.
         
@@ -65,7 +66,6 @@ class TopoModel:
         self.fr.run_one_step()
         self.df.map_depressions()
         self.fsc.run_one_step(dt=dt)
-
 
     def run_model(self, runtime, dt, name):
         """Runs the model for a specified duration.
@@ -87,7 +87,63 @@ class TopoModel:
                 
         filename = str(os.getcwd() + '/' + name + '_t{}.asc'.format(runtime))
         write_esri_ascii(filename, self.grid, clobber = True)
+
+    def update_frame(self, frame_num, dt, fig, steps_per_frame):
+        """
+        Updates the plot. For frame 0, it shows the initial state.
+        For all other frames, it runs the model first, then draws.
+        """
+        # --- THIS IS THE FIX ---
+        # Special case for the very first frame
+        if frame_num == 0:
+            # Don't run the model, just set the time for the title
+            current_time = 0
+        else:
+            # For all other frames, run the simulation first
+            for _ in range(steps_per_frame):
+                self.run_one_step(dt)
+            # Calculate time based on the frame number
+            current_time = frame_num * steps_per_frame * dt
+
+        # --- The drawing logic is now the same for all frames ---
+        fig.clear()
+        ax = fig.add_subplot(1, 1, 1)
+        imshow_grid(
+            self.grid,
+            'topographic__elevation',
+            colorbar_label='Elevation (m)',
+            cmap='terrain',
+            grid_units=('m', 'm'),
+        )
+        ax.set_title(f'Time: {int(current_time)} years')
+
+    def run_model_with_animation(self, runtime, dt, steps_per_frame=1, filename=None):
+        # --- FIX: Add 1 to the frame count for the initial state ---
+        total_frames = int(runtime / (dt * steps_per_frame)) + 1
         
+        print(f"Generating animation with {total_frames} frames...")
+        fig = plt.figure(figsize=(8, 6))
+
+        anim = FuncAnimation(
+            fig,
+            func=self.update_frame,
+            frames=total_frames,
+            fargs=(dt, fig, steps_per_frame),
+            interval=1,
+            blit=False,
+            repeat=False
+        )
+
+        if filename:
+            print(f"Saving animation to {filename}...")
+            anim.save(filename, writer='pillow', progress_callback=lambda i, n: print(f'Saving frame {i+1} of {n}'))
+            print("Animation saved successfully.")
+        else:
+            print("Showing animation...")
+            plt.show()
+        
+        plt.close(fig)
+
         
 
 

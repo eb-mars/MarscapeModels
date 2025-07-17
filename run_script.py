@@ -34,7 +34,6 @@ North = params['North']
 East = params['East']
 South = params['South']
 
-# --- Experiment 1: Tilted landscape with two rock types ---
 # 1. Create the initial topography
 grid = create_tilted_landscape(rows=nrows, cols=ncols, cell_size=cell_size, rf=rf, tilt=slope, tilt_direction=tilt_direction, seed=seed)
 
@@ -57,7 +56,8 @@ model.define_boundaries(grid, tilt_direction)
 
 # 4. Run the model
 print("Starting model run...")
-model.run_model(runtime, dt, name)
+# model.run_model(runtime, dt, name)
+model.run_model_with_animation(runtime, dt)
 print("Model run complete.")
 
 # 5. Visualize the result
@@ -76,7 +76,7 @@ prf = ChannelProfiler(
     model.grid,
     main_channel_only=False,
     number_of_watersheds=None,
-    minimum_channel_threshold=model.grid.dy*model.grid.dx*20,
+    minimum_channel_threshold=1000,
 )
 prf.run_one_step()
 
@@ -100,58 +100,23 @@ plt.show()
 model.fr.run_one_step() 
 model.df.map_depressions()  # Ensure depressions are handled
 channel_data = get_channel_erosion_and_discharge(model.grid, prf)
-
-# Get data for the first channel
-first_outlet = list(channel_data.keys())[0]
-erosion = channel_data[first_outlet]['erosion_depth']
-discharge = channel_data[first_outlet]['discharge']
-
-# Create plots
-plt.figure(3, figsize=(12, 5))
-
-# Plot 1: Erosion Depth vs. Distance
-plt.subplot(1, 2, 1)
-plt.plot(channel_data[first_outlet]['distance_from_outlet'], erosion, 'b-')
-plt.xlabel('Distance from Outlet (m)')
-plt.ylabel('Erosional Depth (m)')
-plt.title('Erosion Profile')
-plt.grid(True)
-
-# Plot 2: Erosion Depth vs. Discharge (Log-Log Scale)
-plt.subplot(1, 2, 2)
-# Filter out points with zero or negative erosion/discharge for log plot
-# valid_points = (erosion > 0) & (discharge > 0)
-# plt.scatter(discharge[valid_points], erosion[valid_points], alpha=0.6)
-plt.scatter(discharge, erosion, alpha=0.6)
-# plt.xscale('log')
-# plt.yscale('log')
-plt.xlabel('Discharge ($m^3/yr$)')
-plt.ylabel('Erosional Depth (m)')
-plt.title('Erosion vs. Discharge')
-plt.grid(True, which="both", ls="--")
-
-plt.tight_layout()
-plt.show()
+plot_erosion_vs_discharge(channel_data)
 
 # 6. Optional Checks plotting other data on the grid
-imshow_grid(
-    model.grid,
-    'drainage_area',
-    cmap='terrain',
-    grid_units=('m', 'm')
-)
-plt.title("Final Drainage Area")
-plt.show()
+# imshow_grid(
+#     model.grid,
+#     'drainage_area',
+#     cmap='terrain',
+#     grid_units=('m', 'm')
+# )
+# plt.title("Final Drainage Area")
+# plt.show()
 
-imshow_grid(
-    model.grid,
-    'surface_water__discharge',
-    cmap='terrain',
-    grid_units=('m', 'm')
-)
-plt.title("Final surface Water Discharge")
-plt.show()
-
-
-
-
+# imshow_grid(
+#     model.grid,
+#     'surface_water__discharge',
+#     cmap='terrain',
+#     grid_units=('m', 'm')
+# )
+# plt.title("Final surface Water Discharge")
+# plt.show()
