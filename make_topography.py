@@ -193,13 +193,14 @@ def add_split_lithology(grid, erodibility_left=1e-6, erodibility_right=5e-6):
     
     return grid
 
-def import_topography(filename, cell_size, flow_director='D8'):
+def import_topography(original_dem, reconstructed_dem, cell_size, flow_director='D8'):
     """
     Imports a topography from a GeoTIFF file and returns a grid at the same resolution as the synthetic landscapes
     This will only set a single outlet so it is only appropriate to use on a single watershed / drainage basin.
     
     Parameters:
-        filename (str): Path to the GeoTIFF file.
+        original_dem (str): Path to the original dem file.
+        reconstructed_dem (str): Path to the reconstructed dem file.
         cell_size (float): Desired resolution of the grid in meters.
         flow_director (str, optional): Flow director to use for flow accumulation. Default is 'D8'.
     
@@ -208,12 +209,20 @@ def import_topography(filename, cell_size, flow_director='D8'):
     """
 
     # Read source DEM
-    with rio.open(filename) as src:
+    with rio.open(original_dem) as src:
         dem = src.read(1)
         dem[dem <= 0] = np.nan  
         src_transform = src.transform
         src_crs = src.crs
         bounds = src.bounds
+
+    with rio.open(reconstructed_dem) as recon_src:
+        recon_dem = recon_src.read(1)
+        recon_dem[recon_dem <= 0] = np.nan  
+        recon_src_transform = recon_src.transform
+        recon_src_crs = recon_src.crs
+        recon_bounds = recon_src.bounds
+
 
     # Compute target shape from bounds and desired resolution
     new_width = int((bounds.right - bounds.left) / cell_size)
@@ -225,6 +234,7 @@ def import_topography(filename, cell_size, flow_director='D8'):
 
     # Destination array
     resampled = np.empty((new_height, new_width), dtype=np.float32)
+    recon_resampled = np.empty((new_height, new_width), dtype=np.float32)
 
     # Reproject and resample
     reproject(
@@ -236,19 +246,40 @@ def import_topography(filename, cell_size, flow_director='D8'):
         dst_crs=src_crs,  # no CRS change, just resampling
         resampling=Resampling.bilinear  
     )
+
+    # Reproject the reconstructed DEM to the same grid
+    reproject(
+        source=recon_dem,
+        destination=recon_resampled,
+        src_transform=recon_src_transform,
+        src_crs=recon_src_crs,
+        dst_transform=new_transform,
+        dst_crs=recon_src_crs,  # no CRS change, just resampling
+        resampling=Resampling.bilinear
+    )
+
     # Make this a landlab grid
     grid = RasterModelGrid((new_height, new_width), xy_spacing=cell_size)
+    recon_grid = RasterModelGrid((new_height, new_width), xy_spacing=cell_size)
 
-    # Adjust so the origin is in the righ tplace
+    # Adjust so the origin is in the right place
     resampled = np.flipud(resampled) 
     resampled = resampled.astype(float)  
     resampled[np.isnan(resampled)] = -9999.0
-
     resampled_flat = resampled.reshape(grid.shape).flatten()
 
-    grid.add_field("topographic__elevation", resampled_flat, at="node")
+    #Adjust the reconstructed DEM so the origin is in the right place
+    recon_resampled = np.flipud(recon_resampled)
+    recon_resampled = recon_resampled.astype(float)
+    recon_resampled[np.isnan(recon_resampled)] = -9999.0
+    recon_resampled_flat = recon_resampled.reshape(recon_grid.shape).flatten()
 
-    #Find where the outlet is and set all boundary conditions
+    
+    #Add data to the landlab grid
+    grid.add_field("topographic__elevation", resampled_flat, at="node")
+    recon_grid.add_field("topographic__elevation", recon_resampled_flat, at="node")
+
+    #Find where the outlet is from the original DEM and set all boundary conditions for both
     fr = FlowAccumulator(grid, flow_director = flow_director)
     df = DepressionFinderAndRouter(grid) # Routs flow over pits
     fr.run_one_step()
@@ -256,5 +287,5 @@ def import_topography(filename, cell_size, flow_director='D8'):
     outlet = grid.set_watershed_boundary_condition("topographic__elevation", return_outlet_id=True)  #returns outlet id
     # Set no data nodes to closed, data nodes to origin, and outlet to open
     grid.set_watershed_boundary_condition_outlet_id(outlet[0],"topographic__elevation", nodata_value = -9999.0) 
-
-    return grid
+    recon_grid.set_watershed_boundary_condition_outlet_id(outlet[0],"topographic__elevation", nodata_value = -9999.0)
+    return recon_grid
