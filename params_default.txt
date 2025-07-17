@@ -13,7 +13,7 @@ East: True
 South: True
 #configure model run params
 flow_director: "D8"
-K_sp: 0.0001
+K_sp: 0.0003
 n_sp: 0.7
 m_sp: 0.5
 runoff_rate: 1.0

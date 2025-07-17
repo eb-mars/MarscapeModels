@@ -1,4 +1,6 @@
 import numpy as np
+from scipy.stats import spearmanr, linregress
+import matplotlib.pyplot as plt
 
 def get_channel_erosion_and_discharge(grid, profiler,
                                       initial_topo='initial_topographic__elevation',
@@ -63,3 +65,44 @@ def get_channel_erosion_and_discharge(grid, profiler,
         'discharge': channel_discharge,
     }
     return channel_data
+
+def plot_erosion_vs_discharge(channel_data):
+    """
+    Plots erosion depth against discharge.
+
+    Parameters:
+        channel_data (dict): Dictionary containing 'distance_from_outlet',
+                             'erosion_depth', and 'discharge'.
+    """
+    erosion = channel_data['erosion_depth']
+    discharge = channel_data['discharge']
+
+    # Create plots
+    plt.figure(figsize=(5, 4))
+    plt.scatter(discharge, erosion, alpha=0.6)
+    plt.xscale('log')
+    plt.yscale('log')
+    plt.xlabel('Discharge ($m^3/yr$)')
+    plt.ylabel('Erosional Depth (m)')
+    plt.title('Erosion vs. Discharge')
+
+    res_s = spearmanr(discharge, erosion)
+    res_l = linregress(discharge, erosion)
+    graph_fit = linregress(np.log10(discharge), np.log10(erosion))
+
+    # Plot the regression line
+    x = np.linspace(np.nanmin(discharge), np.nanmax(discharge), 100)
+    y = 10 ** (graph_fit.intercept + graph_fit.slope * np.log10(x))
+    plt.plot(x, y, c='#698fd6', lw=2)  #ad664b
+
+    textstr = '\n'.join((
+        r"Spearman's rank correlation = %.3f" % (res_s.correlation, ),
+        f'Pearson correlation = {res_l.rvalue:.3f}'))
+
+    props = dict(facecolor='white', alpha=0.5)
+    plt.text(0.17, 0.12, textstr, transform=plt.gca().transAxes,
+            verticalalignment='top', bbox=props,)
+
+    plt.grid(True)
+    plt.tight_layout()
+    plt.show()

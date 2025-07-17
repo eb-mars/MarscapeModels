@@ -34,7 +34,6 @@ North = params['North']
 East = params['East']
 South = params['South']
 
-# --- Experiment 1: Tilted landscape with two rock types ---
 # 1. Create the initial topography
 grid = create_tilted_landscape(rows=nrows, cols=ncols, cell_size=cell_size, rf=rf, tilt=slope, tilt_direction=tilt_direction, seed=seed)
 
@@ -101,38 +100,7 @@ plt.show()
 model.fr.run_one_step() 
 model.df.map_depressions()  # Ensure depressions are handled
 channel_data = get_channel_erosion_and_discharge(model.grid, prf)
-
-# Get data for the first channel
-# first_outlet = list(channel_data.keys())[0]
-erosion = channel_data['erosion_depth']
-discharge = channel_data['discharge']
-
-# Create plots
-plt.figure(3, figsize=(12, 5))
-
-# Plot 1: Erosion Depth vs. Distance
-plt.subplot(1, 2, 1)
-plt.scatter(channel_data['distance_from_outlet'], erosion, alpha=0.6)
-plt.xlabel('Distance from Outlet (m)')
-plt.ylabel('Erosional Depth (m)')
-plt.title('Erosion Profile')
-plt.grid(True)
-
-# Plot 2: Erosion Depth vs. Discharge (Log-Log Scale)
-plt.subplot(1, 2, 2)
-# Filter out points with zero or negative erosion/discharge for log plot
-# valid_points = (erosion > 0) & (discharge > 0)
-# plt.scatter(discharge[valid_points], erosion[valid_points], alpha=0.6)
-plt.scatter(discharge, erosion, alpha=0.6)
-plt.xscale('log')
-plt.yscale('log')
-plt.xlabel('Discharge ($m^3/yr$)')
-plt.ylabel('Erosional Depth (m)')
-plt.title('Erosion vs. Discharge')
-plt.grid(True)
-
-plt.tight_layout()
-plt.show()
+plot_erosion_vs_discharge(channel_data)
 
 # 6. Optional Checks plotting other data on the grid
 # imshow_grid(
