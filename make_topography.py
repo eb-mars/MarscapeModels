@@ -3,6 +3,7 @@ import numpy as np
 import rasterio as rio
 from rasterio.enums import Resampling
 from rasterio.warp import reproject
+from landlab.components import ChannelProfiler, FlowAccumulator, DepressionFinderAndRouter
 
 # --- Functions to create various initial topographies with elevation patterns
 def create_noisy_landscape(rows, cols, cell_size=1000, rf=0.1, seed=3):
@@ -192,13 +193,15 @@ def add_split_lithology(grid, erodibility_left=1e-6, erodibility_right=5e-6):
     
     return grid
 
-def import_topography(filename, cell_size):
+def import_topography(filename, cell_size, flow_director='D8'):
     """
     Imports a topography from a GeoTIFF file and returns a grid at the same resolution as the synthetic landscapes
+    This will only set a single outlet so it is only appropriate to use on a single watershed / drainage basin.
     
     Parameters:
         filename (str): Path to the GeoTIFF file.
         cell_size (float): Desired resolution of the grid in meters.
+        flow_director (str, optional): Flow director to use for flow accumulation. Default is 'D8'.
     
     Returns:
         grid (RasterModelGrid): A Landlab grid with the imported topography.
@@ -233,20 +236,25 @@ def import_topography(filename, cell_size):
         dst_crs=src_crs,  # no CRS change, just resampling
         resampling=Resampling.bilinear  
     )
+    # Make this a landlab grid
     grid = RasterModelGrid((new_height, new_width), xy_spacing=cell_size)
-    resampled = np.flipud(resampled)
-    grid.add_field("topographic__elevation", resampled.flatten(), at="node")
 
-    valid_nodes = ~np.isnan(resampled)
-    
-    CLOSED_BOUNDARY = 4
-    CORE_NODE = 0
+    # Adjust so the origin is in the righ tplace
+    resampled = np.flipud(resampled) 
+    resampled = resampled.astype(float)  
+    resampled[np.isnan(resampled)] = -9999.0
 
-    # Set everything erodable
-    grid.status_at_node[:] = CORE_NODE
+    resampled_flat = resampled.reshape(grid.shape).flatten()
 
-    # Close ocean nodes
-    grid.status_at_node[~valid_nodes.flatten()] = CLOSED_BOUNDARY
+    grid.add_field("topographic__elevation", resampled_flat, at="node")
 
+    #Find where the outlet is and set all boundary conditions
+    fr = FlowAccumulator(grid, flow_director = flow_director)
+    df = DepressionFinderAndRouter(grid) # Routs flow over pits
+    fr.run_one_step()
+    df.map_depressions()
+    outlet = grid.set_watershed_boundary_condition("topographic__elevation", return_outlet_id=True)  #returns outlet id
+    # Set no data nodes to closed, data nodes to origin, and outlet to open
+    grid.set_watershed_boundary_condition_outlet_id(outlet[0],"topographic__elevation", nodata_value = -9999.0) 
 
     return grid
