@@ -34,7 +34,7 @@ class TopoModel:
             # if rainfall_rate is not None:
             # self.grid.at_node['water__unit_flux_in'] = np.ones_like(self.grid.at_node['drainage_area']) * rainfall_rate
 
-    def define_boundaries(self, grid, slope_direction):
+    def define_boundaries(self, slope_direction):
 
         """Defines the boundaries of the grid.
         Sets all boundaries/edges to closed, except the one downstream of slope, 
@@ -44,8 +44,6 @@ class TopoModel:
             grid (RasterModelGrid): The grid to set boundaries for.
             slope_direction (str): Direction of the slope, which determines which boundary is open.
         """
-        self.grid = grid
-
         #Slope direction tells us which boundary should be open. False means open.
         North = "North" != slope_direction
         East = "East" != slope_direction
@@ -55,6 +53,29 @@ class TopoModel:
         self.grid.set_closed_boundaries_at_grid_edges(right_is_closed=East, top_is_closed=North, left_is_closed=West, bottom_is_closed=South)
         # self.grid.status_at_node[self.grid.fixed_value_boundary_nodes] = self.grid.BC_NODE_IS_FIXED_GRADIENT
         self.grid.status_at_node[self.grid.fixed_value_boundary_nodes] = self.grid.BC_NODE_IS_FIXED_VALUE
+
+    def define_boundaries_single_cell(self):
+        """Defines the boundaries of a single cell grid.
+        
+        Parameters:
+            grid (RasterModelGrid): The grid to set boundaries for.
+        """
+        # Create a grid and the elevation field (with ties on the boundary)
+        z = self.grid.at_node['topographic__elevation']
+
+        # Automate the random selection of an outlet node from ties
+        boundary_nodes = self.grid.boundary_nodes
+        boundary_elevs = z[boundary_nodes]
+        min_elev = np.min(boundary_elevs)
+
+        # Find all boundary nodes that have the minimum elevation
+        tied_nodes = boundary_nodes[boundary_elevs == min_elev]
+
+        # Randomly choose one of these nodes to be the outlet
+        random_outlet_node = np.random.choice(tied_nodes)
+
+        # Set the watershed boundary using the randomly chosen ID
+        self.grid.set_watershed_boundary_condition_outlet_id(random_outlet_node, z)
             
     def run_one_step(self, dt):
         """Runs the model for a single timestep.

@@ -14,11 +14,11 @@ South: True
 #configure model run params
 flow_director: "D8"
 K_sp: 0.0003
-n_sp: 0.7
+n_sp: 1.0
 m_sp: 0.5
 runoff_rate: 1.0
 dt: 10
 runtime: 1000
 rain_variability: True
-rainfall_rate: 0.01
+rainfall_rate: 0.1
 

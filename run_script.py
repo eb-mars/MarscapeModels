@@ -52,7 +52,8 @@ grid.at_node['initial_topographic__elevation'] = grid.at_node['topographic__elev
 model = TopoModel(grid, K_sp, m_sp, n_sp, flow_director, rain_variability = rain_variability)
 
 # 3a. Define the boundaries of the grid
-model.define_boundaries(grid, tilt_direction)
+# model.define_boundaries(tilt_direction)
+model.define_boundaries_single_cell()
 
 # 4. Run the model
 print("Starting model run...")
