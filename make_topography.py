@@ -4,6 +4,7 @@ import rasterio as rio
 from rasterio.enums import Resampling
 from rasterio.warp import reproject
 from landlab.components import ChannelProfiler, FlowAccumulator, DepressionFinderAndRouter
+from scipy.ndimage import gaussian_filter
 
 # --- Functions to create various initial topographies with elevation patterns
 def create_noisy_landscape(rows, cols, cell_size=1000, rf=0.1, seed=3):
@@ -289,3 +290,64 @@ def import_topography(original_dem, reconstructed_dem, cell_size, flow_director=
     grid.set_watershed_boundary_condition_outlet_id(outlet[0],"topographic__elevation", nodata_value = -9999.0) 
     recon_grid.set_watershed_boundary_condition_outlet_id(outlet[0],"topographic__elevation", nodata_value = -9999.0)
     return recon_grid
+
+def filter_topography(grid, wavelength):
+    """
+    Applies a Gaussian filter to the topography to smooth it.
+
+    Parameters:
+        grid (RasterModelGrid): The grid with topographic data.
+        wavelength (float): The wavelength of the filter in meters.
+
+    Returns:
+        grid (RasterModelGrid): The grid with smoothed topography.
+    """
+    # Convert wavelength in meters to sigma in pixels
+    sigma = wavelength / (2 * np.sqrt(2 * np.log(2))) / grid.dx  
+
+    # Get elevation and reshape to 2D
+    elevation = grid.at_node['topographic__elevation'].reshape(grid.shape)
+
+    # Replace -9999 with np.nan
+    elevation[elevation == -9999] = np.nan
+
+    # Create mask of valid values
+    valid_mask = ~np.isnan(elevation)
+
+    # Replace nan with 0s to allow filtering
+    elevation_filled = np.nan_to_num(elevation, nan=0.0)
+
+    # Apply Gaussian filter to the filled data
+    smoothed = gaussian_filter(elevation_filled, sigma=sigma)
+
+    # Apply Gaussian filter to the mask (to normalize)
+    normalization = gaussian_filter(valid_mask.astype(float), sigma=sigma)
+
+    # Avoid divide-by-zero
+    normalization[normalization == 0] = np.nan
+
+    # Normalize the result
+    smoothed_normalized = smoothed / normalization
+
+    grid.at_node['topographic__elevation'][:] = smoothed_normalized.flatten()
+
+
+    return grid
+
+def save_as_tif(grid, filepath):
+    """
+    Saves the grid's topography as a GeoTIFF file.
+
+    Parameters:
+        grid (RasterModelGrid): The grid with topographic data.
+        filepath (str): The filepath of the output GeoTIFF file.
+    """
+    # Get the elevation data
+    elevation = grid.at_node['topographic__elevation'].reshape(grid.shape)
+
+    # Create a new GeoTIFF file
+    with rio.open(filepath, 'w', driver='GTiff',
+                  height=elevation.shape[0], width=elevation.shape[1],
+                  count=1, dtype=elevation.dtype,
+                  transform=grid.transform) as dst:
+        dst.write(elevation, 1)

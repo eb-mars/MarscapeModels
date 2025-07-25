@@ -1,4 +1,4 @@
-from landlab.components import FastscapeEroder, FlowAccumulator, DepressionFinderAndRouter
+from landlab.components import FastscapeEroder, FlowAccumulator, DepressionFinderAndRouter, LinearDiffuser
 import numpy as np
 from landlab import RasterModelGrid
 from landlab.io import write_esri_ascii
@@ -8,7 +8,7 @@ from landlab.plot import imshow_grid
 from matplotlib.animation import FuncAnimation
 
 class TopoModel:
-    def __init__(self, grid, K_sp, m_sp, n_sp, flow_director, rain_variability=False):
+    def __init__(self, grid, K_sp, m_sp, n_sp, flow_director, diffusivity = 0, rain_variability=False):
         """
         Initializes the model using a PRE-CONFIGURED grid.
         It doesn't create the grid itself.
@@ -26,6 +26,7 @@ class TopoModel:
         # Instantiate flow accumulator, dpression finder, and fastscape eroder components
         self.fr = FlowAccumulator(self.grid, flow_director = flow_director)
         self.df = DepressionFinderAndRouter(self.grid)
+        self.ld = LinearDiffuser(self.grid, linear_diffusivity = diffusivity)  
 
         if rain_variability == False: 
             self.fsc = FastscapeEroder(self.grid, K_sp, m_sp, n_sp, discharge_field='drainage_area')
@@ -87,6 +88,7 @@ class TopoModel:
         self.fr.run_one_step()
         self.df.map_depressions()
         self.fsc.run_one_step(dt=dt)
+        self.ld.run_one_step(dt=dt)
 
     def run_model(self, runtime, dt, name):
         """Runs the model for a specified duration.
