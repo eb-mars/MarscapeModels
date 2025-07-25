@@ -53,8 +53,9 @@ reconstructed = "/Users/gracefanson/Documents/GitHub/MarscapeModels/DEMs/Reconst
 
 grid = import_topography(original, reconstructed, 10)
 
+smoothed_grid = filter_topography(grid, 100)
 # 3. Create a model instance with the prepared grid
-model = TopoModel(grid, K_sp, m_sp, n_sp, flow_director, rain_variability = rain_variability)
+model = TopoModel(smoothed_grid, K_sp, m_sp, n_sp, flow_director, rain_variability = rain_variability)
 
 # 3a. Define the boundaries of the grid
 # model.define_boundaries(grid, tilt_direction)
