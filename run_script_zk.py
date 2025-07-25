@@ -6,9 +6,11 @@ from landlab.plot import imshow_grid
 from landlab.components import ChannelProfiler
 from load import load_params_txt
 import matplotlib.pyplot as plt
+from landlab import load_params
 
 ## LOAD PARAMETERS FROM PARAMETER FILE
-params = load_params_txt() ## parameter dictionary
+# params = load_params_txt() ## parameter dictionary
+params = load_params("params_zk.txt")  ## load the params file (using landlab load_params)
 name = params['model_name']
 seed = params['seed']
 nrows = params['nrows']
@@ -38,9 +40,10 @@ East = params['East']
 South = params['South']
 
 # 1. Create the initial topography
-match landscape_type:
-    case 'tilted':
-        grid = create_tilted_landscape(rows=nrows, cols=ncols, cell_size=cell_size, rf=rf, tilt=slope, tilt_direction=tilt_direction, seed=seed)
+# match landscape_type:
+#     case 'tilted':
+#         grid = create_tilted_landscape(rows=nrows, cols=ncols, cell_size=cell_size, rf=rf, tilt=slope, tilt_direction=tilt_direction, seed=seed)
+grid = create_diagonal_tilted_landscape(rows=nrows, cols=ncols, cell_size=cell_size, rf=rf, tilt=slope, tilt_direction="Southeast", seed=seed)
 
 # 2. Add a lithology pattern to it
 match lithology_type:
@@ -62,12 +65,18 @@ model = TopoModel(grid, K_sp, m_sp, n_sp, flow_director, rain_variability = rain
 
 # 3a. Define the boundaries of the grid
 # model.define_boundaries(grid, tilt_direction)
-model.define_boundaries_single_cell()
+# outlet_id = model.define_boundaries_outlet_fixed_value()
+# outlet_id = model.define_boundaries_outlet_fixed_gradient()
+# model.define_boundaries_outlet_center(tilt_direction)
+model.define_boundaries_corner("Southeast")
+
+# After creating your grid, add this line:
+print(f"Number of core nodes: {model.grid.number_of_core_nodes}")
 
 # 4. Run the model
 print("Starting model run...")
-# model.run_model(runtime, dt, name)
-model.run_model_with_animation(runtime, dt)
+model.run_model(runtime, dt, name)
+# model.run_model_with_animation(runtime, dt)
 print("Model run complete.")
 
 # 5. Visualize the result
@@ -80,13 +89,32 @@ imshow_grid(
 plt.title("Final Topography")
 plt.show()
 
+# 6. Optional Checks plotting other data on the grid
+imshow_grid(
+    model.grid,
+    'drainage_area',
+    cmap='terrain',
+    grid_units=('m', 'm')
+)
+plt.title("Final Drainage Area")
+plt.show()
+
+# imshow_grid(
+#     model.grid,
+#     'surface_water__discharge',
+#     cmap='terrain',
+#     grid_units=('m', 'm')
+# )
+# plt.title("Final surface Water Discharge")
+# plt.show()
+
 ## CHANNEL PROFILER - handy visualization and channel node ID / channel measurement tool
 # plot with channels shown
 prf = ChannelProfiler(
     model.grid,
     main_channel_only=False,
     number_of_watersheds=None,
-    minimum_channel_threshold=1000,
+    minimum_channel_threshold=1000
 )
 prf.run_one_step()
 
@@ -100,25 +128,6 @@ plt.show()
 
 # Run FlowAccumulator to calculate discharge on FINAL topography
 model.fr.run_one_step() 
-model.df.map_depressions()  # Ensure depressions are handled
+model.df.run_one_step()  # Ensure depressions are handled
 channel_data = get_channel_erosion_and_discharge(model.grid, prf)
 plot_erosion_vs_discharge(channel_data)
-
-# 6. Optional Checks plotting other data on the grid
-# imshow_grid(
-#     model.grid,
-#     'drainage_area',
-#     cmap='terrain',
-#     grid_units=('m', 'm')
-# )
-# plt.title("Final Drainage Area")
-# plt.show()
-
-# imshow_grid(
-#     model.grid,
-#     'surface_water__discharge',
-#     cmap='terrain',
-#     grid_units=('m', 'm')
-# )
-# plt.title("Final surface Water Discharge")
-# plt.show()

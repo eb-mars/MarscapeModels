@@ -1,4 +1,5 @@
 test_scripts/*
+figs/*
 __pycache__/*
 *.asc
 dems/*

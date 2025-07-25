@@ -56,6 +56,40 @@ def create_tilted_landscape(rows, cols, cell_size=1000, tilt=0.01, rf=0.1, tilt_
     z += np.random.rand(grid.number_of_nodes) * rf * cell_size # Add some noise
     return grid
 
+def create_diagonal_tilted_landscape(rows, cols, cell_size=1000, tilt=0.01, rf=0.1, tilt_direction='Southeast', seed=3):
+    """
+    Creates a diagonally tilted grid.
+    
+    Parameters:
+        rows (int): Number of rows in the grid.
+        cols (int): Number of columns in the grid.
+        cell_size (float): Spacing between nodes in meters.
+        rf (float): Random factor to add noise to the landscape, as a percentage  of the cell size.
+        tilt (float): Tilt factor for the landscape.
+        tilt_direction (str): Direction of the tilt ('Northeast', 'Northwest', 'Southeast', 'Southwest').
+        seed (int): Random seed for reproducibility.
+        
+    Returns:
+        grid (RasterModelGrid): A Landlab grid with a diagonally tilted landscape
+    """
+    grid = RasterModelGrid((rows, cols), xy_spacing=cell_size)
+    z = grid.add_zeros('topographic__elevation', at='node')
+    
+    if tilt_direction == 'Northeast':
+        z -= (grid.x_of_node + grid.y_of_node) * tilt
+    elif tilt_direction == 'Northwest':
+        z += (grid.x_of_node - grid.y_of_node) * tilt
+    elif tilt_direction == 'Southeast':
+        z -= tilt * (grid.x_of_node - grid.y_of_node)
+    elif tilt_direction == 'Southwest':
+        z += tilt * (grid.x_of_node + grid.y_of_node)
+    else:
+        raise ValueError("Invalid tilt direction. Choose from 'Northeast', 'Northwest', 'Southeast', or 'Southwest'.")
+    
+    np.random.seed(seed)
+    z += np.random.rand(grid.number_of_nodes) * rf * cell_size  # Add some noise
+    return grid
+
 def create_step_landscape(rows, cols, cell_size=1000, step_height=100.0, rf=0.1, seed=3):
     """
     Creates a grid with a single vertical step fault. The right half of the grid is elevated by the step_height.

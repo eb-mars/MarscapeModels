@@ -48,14 +48,6 @@ def get_channel_erosion_and_discharge(grid, profiler,
             distances.extend(segment_data['distances'])
             channel_erosion.extend(erosion_depth_field[segment_nodes])
             channel_discharge.extend(grid.at_node[discharge_field][segment_nodes])
-        
-        # Convert to numpy arrays
-        # distance_from_outlet = np.array(all_distances)
-        # all_nodes = np.array(all_nodes, dtype=int)
-
-        # # Get erosion and discharge for the channel nodes
-        # channel_erosion = erosion_depth_field[all_nodes]
-        # channel_discharge = grid.at_node[discharge_field][all_nodes]
 
         # Store results
     channel_data = {
