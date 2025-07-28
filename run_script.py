@@ -1,6 +1,7 @@
 from model import TopoModel
 from make_topography import *
 from make_precip import *
+from define_boundaries import *
 from analyse_streams import *
 from landlab.plot import imshow_grid
 from landlab.components import ChannelProfiler
@@ -48,12 +49,10 @@ grid = add_uniform_precip(grid, precipitation_rate=rainfall_rate)
 # 2b. Store the initial topography to calculate erosion later
 grid.at_node['initial_topographic__elevation'] = grid.at_node['topographic__elevation'].copy()
 
+grid = define_boundaries(grid, tilt_direction)
+
 # 3. Create a model instance with the prepared grid
 model = TopoModel(grid, K_sp, m_sp, n_sp, flow_director, rain_variability = rain_variability)
-
-# 3a. Define the boundaries of the grid
-# model.define_boundaries(tilt_direction)
-model.define_boundaries_single_cell()
 
 # 4. Run the model
 print("Starting model run...")

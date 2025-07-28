@@ -1,6 +1,7 @@
 from model import TopoModel
 from make_topography import *
 from make_precip import *
+from define_boundaries import *
 from analyse_streams import *
 from landlab.plot import imshow_grid
 from landlab.components import ChannelProfiler
@@ -60,24 +61,27 @@ match precip_type:
 # 2b. Store the initial topography to calculate erosion later
 grid.at_node['initial_topographic__elevation'] = grid.at_node['topographic__elevation'].copy()
 
+# grid.set_watershed_boundary_condition('topographic__elevation',)
+grid = define_boundaries_corner(grid, slope_direction="Southeast")
+
 # 3. Create a model instance with the prepared grid
 model = TopoModel(grid, K_sp, m_sp, n_sp, flow_director, rain_variability = rain_variability)
-
-# 3a. Define the boundaries of the grid
-# model.define_boundaries(grid, tilt_direction)
-# outlet_id = model.define_boundaries_outlet_fixed_value()
-# outlet_id = model.define_boundaries_outlet_fixed_gradient()
-# model.define_boundaries_outlet_center(tilt_direction)
-model.define_boundaries_corner("Southeast")
-
-# After creating your grid, add this line:
-print(f"Number of core nodes: {model.grid.number_of_core_nodes}")
 
 # 4. Run the model
 print("Starting model run...")
 model.run_model(runtime, dt, name)
 # model.run_model_with_animation(runtime, dt)
 print("Model run complete.")
+
+node_status = np.zeros(grid.number_of_nodes)
+node_status[grid.core_nodes] = 1
+imshow_grid(
+    grid,
+    node_status,
+    cmap='viridis',
+    show_elements=True, # Optional: shows grid lines
+)
+plt.show()
 
 # 5. Visualize the result
 imshow_grid(
