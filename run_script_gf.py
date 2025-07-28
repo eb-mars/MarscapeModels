@@ -6,9 +6,10 @@ from landlab.plot import imshow_grid
 from landlab.components import ChannelProfiler
 from load import load_params_txt
 import matplotlib.pyplot as plt
+from landlab import load_params
 
 ## LOAD PARAMETERS FROM PARAMETER FILE
-params = load_params_txt() ## parameter dictionary
+params = load_params("params_default.txt") ## parameter dictionary
 name = params['model_name']
 seed = params['seed']
 nrows = params['nrows']
@@ -48,14 +49,14 @@ South = params['South']
 # # 2b. Store the initial topography to calculate erosion later
 # grid.at_node['initial_topographic__elevation'] = grid.at_node['topographic__elevation'].copy()
 
-original = "/Users/gracefanson/Documents/GitHub/MarscapeModels/DEMs/Kohala_578.tif"
+# original = "/Users/gracefanson/Documents/GitHub/MarscapeModels/DEMs/Kohala_578.tif"
+original = "/Users/gracefanson/Documents/GitHub/MarscapeModels/DEMs/nodata_assigned_578.tif"
 reconstructed = "/Users/gracefanson/Documents/GitHub/MarscapeModels/DEMs/Reconstructed_Kohala_578.tif"
 
-grid = import_topography(original, reconstructed, 10)
+grid = import_topography(original, reconstructed, 10, 300, etching= 2)
 
-smoothed_grid = filter_topography(grid, 100)
 # 3. Create a model instance with the prepared grid
-model = TopoModel(smoothed_grid, K_sp, m_sp, n_sp, flow_director, rain_variability = rain_variability)
+model = TopoModel(grid, K_sp, m_sp, n_sp, flow_director,diffusivity = .5, rain_variability = rain_variability)
 
 # 3a. Define the boundaries of the grid
 # model.define_boundaries(grid, tilt_direction)

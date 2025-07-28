@@ -5,6 +5,7 @@ from rasterio.enums import Resampling
 from rasterio.warp import reproject
 from landlab.components import ChannelProfiler, FlowAccumulator, DepressionFinderAndRouter
 from scipy.ndimage import gaussian_filter
+from rasterio.transform import from_origin
 
 # --- Functions to create various initial topographies with elevation patterns
 def create_noisy_landscape(rows, cols, cell_size=1000, rf=0.1, seed=3):
@@ -194,50 +195,18 @@ def add_split_lithology(grid, erodibility_left=1e-6, erodibility_right=5e-6):
     
     return grid
 
-def import_topography(original_dem, reconstructed_dem, cell_size, flow_director='D8'):
-    """
-    Imports a topography from a GeoTIFF file and returns a grid at the same resolution as the synthetic landscapes
-    This will only set a single outlet so it is only appropriate to use on a single watershed / drainage basin.
-    
-    Parameters:
-        original_dem (str): Path to the original dem file.
-        reconstructed_dem (str): Path to the reconstructed dem file.
-        cell_size (float): Desired resolution of the grid in meters.
-        flow_director (str, optional): Flow director to use for flow accumulation. Default is 'D8'.
-    
-    Returns:
-        grid (RasterModelGrid): A Landlab grid with the imported topography.
-    """
+def resample_grid(src, cell_size):
+    dem = src.read(1)
+    dem[dem <= 0] = np.nan 
+    src_transform = src.transform
+    src_crs = src.crs
+    bounds = src.bounds
 
-    # Read source DEM
-    with rio.open(original_dem) as src:
-        dem = src.read(1)
-        dem[dem <= 0] = np.nan  
-        src_transform = src.transform
-        src_crs = src.crs
-        bounds = src.bounds
-
-    with rio.open(reconstructed_dem) as recon_src:
-        recon_dem = recon_src.read(1)
-        recon_dem[recon_dem <= 0] = np.nan  
-        recon_src_transform = recon_src.transform
-        recon_src_crs = recon_src.crs
-        recon_bounds = recon_src.bounds
-
-
-    # Compute target shape from bounds and desired resolution
     new_width = int((bounds.right - bounds.left) / cell_size)
     new_height = int((bounds.top - bounds.bottom) / cell_size)
-
-    # Build the new transform
-    from rasterio.transform import from_origin
     new_transform = from_origin(bounds.left, bounds.top, cell_size, cell_size)
-
-    # Destination array
     resampled = np.empty((new_height, new_width), dtype=np.float32)
-    recon_resampled = np.empty((new_height, new_width), dtype=np.float32)
 
-    # Reproject and resample
     reproject(
         source=dem,
         destination=resampled,
@@ -247,92 +216,113 @@ def import_topography(original_dem, reconstructed_dem, cell_size, flow_director=
         dst_crs=src_crs,  # no CRS change, just resampling
         resampling=Resampling.bilinear  
     )
+    return resampled
 
-    # Reproject the reconstructed DEM to the same grid
-    reproject(
-        source=recon_dem,
-        destination=recon_resampled,
-        src_transform=recon_src_transform,
-        src_crs=recon_src_crs,
-        dst_transform=new_transform,
-        dst_crs=recon_src_crs,  # no CRS change, just resampling
-        resampling=Resampling.bilinear
-    )
-
+def topography_to_landlab(topography, cell_size):
+    height, width = topography.shape
     # Make this a landlab grid
-    grid = RasterModelGrid((new_height, new_width), xy_spacing=cell_size)
-    recon_grid = RasterModelGrid((new_height, new_width), xy_spacing=cell_size)
+    grid = RasterModelGrid((height, width), xy_spacing=cell_size)
 
-    # Adjust so the origin is in the right place
-    resampled = np.flipud(resampled) 
-    resampled = resampled.astype(float)  
-    resampled[np.isnan(resampled)] = -9999.0
-    resampled_flat = resampled.reshape(grid.shape).flatten()
+    # Adjust so the origin is in the right place for original DEM
+    topography = np.flipud(topography) 
+    topography = topography.astype(float)  
+    topography[np.isnan(topography)] = -9999.0
+    topography_flat = topography.reshape(grid.shape).flatten()
 
-    #Adjust the reconstructed DEM so the origin is in the right place
-    recon_resampled = np.flipud(recon_resampled)
-    recon_resampled = recon_resampled.astype(float)
-    recon_resampled[np.isnan(recon_resampled)] = -9999.0
-    recon_resampled_flat = recon_resampled.reshape(recon_grid.shape).flatten()
-
-    
     #Add data to the landlab grid
-    grid.add_field("topographic__elevation", resampled_flat, at="node")
-    recon_grid.add_field("topographic__elevation", recon_resampled_flat, at="node")
+    grid.add_field("topographic__elevation", topography_flat, at="node")
 
-    #Find where the outlet is from the original DEM and set all boundary conditions for both
+    return grid
+
+def get_outlets_channel(grid, flow_director='D8'):
     fr = FlowAccumulator(grid, flow_director = flow_director)
     df = DepressionFinderAndRouter(grid) # Routs flow over pits
     fr.run_one_step()
     df.map_depressions()
     outlet = grid.set_watershed_boundary_condition("topographic__elevation", return_outlet_id=True)  #returns outlet id
+    
+    #Find out where the channels are and add etching on the reconstructed topogrpahy
+    flow_threshold = 500000
+    drainage_area = grid.at_node['drainage_area']
+    channel_nodes = drainage_area > flow_threshold
+
+    return (outlet, channel_nodes)
+
+def etch (grid, channel_nodes, etching):
+    # Whereer channel_nodes exist, subtract etching from recon_grid
+    grid.at_node['topographic__elevation'][channel_nodes] -= etching
+    return grid
+
+
+
+def import_topography(original_dem, reconstructed_dem, cell_size, filter_wavelength, flow_director='D8', etching = 1):
+    #Read in .tif files
+    with rio.open(original_dem) as src:
+        resampled = resample_grid(src, cell_size)
+
+    # Reconstructed DEM from adding PBTH to DEM
+    with rio.open(reconstructed_dem) as recon_src:
+        recon_resampled = resample_grid(recon_src, cell_size)
+
+    # Turn into Landlab grids
+    grid = topography_to_landlab(resampled, cell_size)
+    recon_grid = topography_to_landlab(recon_resampled, cell_size)
+
+    outlet, channel_nodes = get_outlets_channel(grid, flow_director)
+
     # Set no data nodes to closed, data nodes to origin, and outlet to open
     grid.set_watershed_boundary_condition_outlet_id(outlet[0],"topographic__elevation", nodata_value = -9999.0) 
     recon_grid.set_watershed_boundary_condition_outlet_id(outlet[0],"topographic__elevation", nodata_value = -9999.0)
-    return recon_grid
 
-def filter_topography(grid, wavelength):
-    """
-    Applies a Gaussian filter to the topography to smooth it.
+    filtered_grid = gauss_filter(recon_grid, filter_wavelength)
 
-    Parameters:
-        grid (RasterModelGrid): The grid with topographic data.
-        wavelength (float): The wavelength of the filter in meters.
+    noisy_grid = add_noise(filtered_grid)
 
-    Returns:
-        grid (RasterModelGrid): The grid with smoothed topography.
-    """
-    # Convert wavelength in meters to sigma in pixels
-    sigma = wavelength / (2 * np.sqrt(2 * np.log(2))) / grid.dx  
+    final_grid = etch(noisy_grid, channel_nodes, etching)
 
-    # Get elevation and reshape to 2D
-    elevation = grid.at_node['topographic__elevation'].reshape(grid.shape)
 
-    # Replace -9999 with np.nan
+    return final_grid
+
+from copy import deepcopy
+import numpy as np
+from scipy.ndimage import gaussian_filter
+
+def gauss_filter(grid, wavelength):
+    # Make a deep copy of the grid so we don't modify the original
+    grid_copy = deepcopy(grid)
+
+    # Convert wavelength to sigma
+    sigma = wavelength / (2 * np.sqrt(2 * np.log(2))) / grid_copy.dx
+
+    # Work on the copy
+    elevation = grid_copy.at_node['topographic__elevation'].reshape(grid_copy.shape)
     elevation[elevation == -9999] = np.nan
 
-    # Create mask of valid values
     valid_mask = ~np.isnan(elevation)
-
-    # Replace nan with 0s to allow filtering
     elevation_filled = np.nan_to_num(elevation, nan=0.0)
 
-    # Apply Gaussian filter to the filled data
     smoothed = gaussian_filter(elevation_filled, sigma=sigma)
-
-    # Apply Gaussian filter to the mask (to normalize)
     normalization = gaussian_filter(valid_mask.astype(float), sigma=sigma)
-
-    # Avoid divide-by-zero
     normalization[normalization == 0] = np.nan
 
-    # Normalize the result
     smoothed_normalized = smoothed / normalization
 
-    grid.at_node['topographic__elevation'][:] = smoothed_normalized.flatten()
+    # Assign to the copy
+    grid_copy.at_node['topographic__elevation'][:] = smoothed_normalized.flatten()
+
+    return grid_copy
 
 
-    return grid
+import numpy as np
+
+def add_noise(grid):
+    #temporary function to add noise. do something more thoughtful later
+    grid_copy = deepcopy(grid)
+    noise = np.random.normal(0, 0.1, grid.number_of_nodes)
+    grid_copy.at_node['topographic__elevation'] += noise
+    return grid_copy
+
+
 
 def save_as_tif(grid, filepath):
     """
