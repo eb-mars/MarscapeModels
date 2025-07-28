@@ -147,4 +147,5 @@ def define_boundaries_corner(grid, slope_direction):
     # Set the identified outlet node to a fixed-gradient boundary
     grid.set_closed_boundaries_at_grid_edges(True, True, True, True)
     grid.status_at_node[outlet_node] = grid.BC_NODE_IS_FIXED_GRADIENT
-    # self.grid.at_node['topographic__elevation'][outlet_node] -= 5.
+    grid.at_node['topographic__elevation'][outlet_node] -= 5.
+    return grid
