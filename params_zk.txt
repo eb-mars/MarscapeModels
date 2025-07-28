@@ -1,9 +1,9 @@
 model_name: 'default_p0'
 #configure model grid
-seed: 3
+seed: 2
 nrows: 40
-ncols: 80
-cell_size: 10.
+ncols: 40
+cell_size: 100.
 landscape_type: tilted
 lithology_type: uniform
 slope: 0.003
@@ -19,9 +19,8 @@ K_sp: 0.0003
 n_sp: 1.0
 m_sp: 0.5
 runoff_rate: 1.0
-dt: 10
+dt: 10.
 runtime: 8000
 rain_variability: True
 precip_type: uniform
-rainfall_rate: 0.1
-
+rainfall_rate: 1.
