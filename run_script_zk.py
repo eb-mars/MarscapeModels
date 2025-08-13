@@ -47,22 +47,23 @@ South = params['South']
 grid = create_diagonal_tilted_landscape(rows=nrows, cols=ncols, cell_size=cell_size, rf=rf, tilt=slope, tilt_direction="Southeast", seed=seed)
 
 # 2. Add a lithology pattern to it
-match lithology_type:
-    case 'uniform':
-        grid = add_uniform_lithology(grid, erodibility=K_sp)
+# match lithology_type:
+#     case 'uniform':
+grid = add_uniform_lithology(grid, erodibility=K_sp)
 
 # 2a. (optional) Create an array of rainfall to add at each step
 ##  find the value: -- GEL / time / grid number of nodes
 ##  create array of same size as grid, with every entry = the value above.
-match precip_type:
-    case 'uniform':
-        grid = add_uniform_precip(grid, precipitation_rate=rainfall_rate)
+# match precip_type:
+#     case 'uniform':
+grid = add_uniform_precip(grid, precipitation_rate=rainfall_rate)
 
 # 2b. Store the initial topography to calculate erosion later
 grid.at_node['initial_topographic__elevation'] = grid.at_node['topographic__elevation'].copy()
 
 # grid.set_watershed_boundary_condition('topographic__elevation',)
 grid = define_boundaries_corner(grid, slope_direction="Southeast")
+# grid = define_boundaries_outlet_fixed_gradient(grid, outlet_gradient=0.002)
 
 # 3. Create a model instance with the prepared grid
 model = TopoModel(grid, K_sp, m_sp, n_sp, flow_director, rain_variability = rain_variability)
@@ -73,15 +74,15 @@ model.run_model(runtime, dt, name)
 # model.run_model_with_animation(runtime, dt)
 print("Model run complete.")
 
-node_status = np.zeros(grid.number_of_nodes)
-node_status[grid.core_nodes] = 1
-imshow_grid(
-    grid,
-    node_status,
-    cmap='viridis',
-    show_elements=True, # Optional: shows grid lines
-)
-plt.show()
+# node_status = np.zeros(grid.number_of_nodes)
+# node_status[grid.core_nodes] = 1
+# imshow_grid(
+#     grid,
+#     node_status,
+#     cmap='viridis',
+#     show_elements=True, # Optional: shows grid lines
+# )
+# plt.show()
 
 # 5. Visualize the result
 imshow_grid(
@@ -118,7 +119,7 @@ prf = ChannelProfiler(
     model.grid,
     main_channel_only=False,
     number_of_watersheds=None,
-    minimum_channel_threshold=1000
+    minimum_channel_threshold=1000,
 )
 prf.run_one_step()
 
@@ -132,6 +133,6 @@ plt.show()
 
 # Run FlowAccumulator to calculate discharge on FINAL topography
 model.fr.run_one_step() 
-model.df.run_one_step()  # Ensure depressions are handled
+# model.df.run_one_step()  # Ensure depressions are handled
 channel_data = get_channel_erosion_and_discharge(model.grid, prf)
 plot_erosion_vs_discharge(channel_data)

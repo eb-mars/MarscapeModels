@@ -26,6 +26,7 @@ class TopoModel:
         self.fr = FlowAccumulator(self.grid, flow_director = flow_director)
         # self.df = DepressionFinderAndRouter(self.grid)
         self.df = LakeMapperBarnes(self.grid, method=flow_director, redirect_flow_steepest_descent=True, reaccumulate_flow=True)
+        self.fr = FlowAccumulator(self.grid, flow_director=flow_director, depression_finder=self.df)
         self.ld = LinearDiffuser(self.grid, linear_diffusivity = diffusivity)  
 
         if rain_variability == False: 
@@ -43,7 +44,7 @@ class TopoModel:
         """
         # Route flow and handle depressions
         self.fr.run_one_step()
-        self.df.run_one_step()
+        # self.df.run_one_step()
         self.fsc.run_one_step(dt=dt)
         self.ld.run_one_step(dt=dt)
 

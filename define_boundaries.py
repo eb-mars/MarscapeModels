@@ -87,6 +87,7 @@ def define_boundaries_outlet_fixed_gradient(grid, outlet_gradient=0.002):
     # Set the new elevation in the grid field
     grid.at_node['topographic__elevation'][outlet_node] = new_outlet_elevation
 
+    grid.add_zeros('topographic__steepest_slope', at='node')
     # 5. Set the gradient value for the outlet node for other components to use
     grid.at_node['topographic__steepest_slope'][outlet_node] = outlet_gradient
 
@@ -126,14 +127,14 @@ def define_boundaries_outlet_center(grid, slope_direction):
     grid.status_at_node[outlet_node] = grid.BC_NODE_IS_FIXED_VALUE
     return grid
 
-def define_boundaries_corner(grid, slope_direction):
+def define_boundaries_corner(grid, slope_direction, outlet_gradient=0.002):
     nrows, ncols = grid.shape
 
     if slope_direction == "Northwest":
         # Top-left corner
         outlet_node = (nrows - 1) * ncols
     elif slope_direction == "Northeast":
-        # Top-right corner (the very last node)
+        # Top-right corner (the very last node)∂
         outlet_node = grid.number_of_nodes - 1
     elif slope_direction == "Southwest":
         # Bottom-left corner
@@ -146,6 +147,127 @@ def define_boundaries_corner(grid, slope_direction):
 
     # Set the identified outlet node to a fixed-gradient boundary
     grid.set_closed_boundaries_at_grid_edges(True, True, True, True)
-    grid.status_at_node[outlet_node] = grid.BC_NODE_IS_FIXED_GRADIENT
-    grid.at_node['topographic__elevation'][outlet_node] -= 5.
+    grid.status_at_node[outlet_node] = grid.BC_NODE_IS_FIXED_VALUE
+
+#     4. Find the inland neighbor (the robust way)
+#     Get all neighbors, then find which one is a CORE node.
+#     all_neighbors = grid.adjacent_nodes_at_node[outlet_node]
+#     core_neighbors = all_neighbors[grid.status_at_node[all_neighbors] == grid.BC_NODE_IS_CORE]
+
+#     if core_neighbors.size == 0:
+#         raise ValueError("Outlet node has no CORE neighbors. Check grid setup.")
+    
+#     inland_neighbor = core_neighbors[0]
+#     print(f"Outlet node: {outlet_node}, Inland neighbor: {inland_neighbor}")
+
+#     # 5. Calculate and set the outlet elevation (your logic is good)
+#     link_to_outlet = grid.link_connecting_node_pair(inland_neighbor, outlet_node)
+#     link_length = grid.length_of_link[link_to_outlet]
+    
+#     neighbor_elevation = grid.at_node['topographic__elevation'][inland_neighbor]
+#     new_outlet_elevation = neighbor_elevation - (outlet_gradient * link_length)
+#     grid.at_node['topographic__elevation'][outlet_node] = new_outlet_elevation
+    
+#     print(f"New outlet elevation: {new_outlet_elevation:.4f} (Neighbor elev: {neighbor_elevation:.4f}, Link length: {link_length})")
+    
+    grid.add_zeros('topographic__steepest_slope', at='node')
+    grid.at_node['topographic__steepest_slope'][outlet_node] = outlet_gradient
+
     return grid
+
+# def define_boundaries_corner(grid, slope_direction, outlet_gradient=0.002):
+#     """
+#     Sets a single corner of the grid as a fixed-gradient outlet and closes all other boundaries.
+#     """
+#     nrows, ncols = grid.shape
+    
+#     print("\n--- Starting Boundary Definition ---")
+#     print(f"Grid shape: {grid.shape}")
+
+#     # 1. Identify the outlet node and its expected inland neighbor
+#     if slope_direction == "Southeast":
+#         outlet_node = ncols - 1
+#         # The inland neighbor is diagonal to the corner
+#         inland_neighbor_id = outlet_node + ncols - 1 
+#     else:
+#         # Add logic for other corners if needed
+#         raise NotImplementedError("Debug logic only implemented for 'Southeast'")
+
+#     print(f"Outlet Node ID: {outlet_node}")
+#     print(f"Expected Inland Neighbor ID: {inland_neighbor_id}")
+
+#     # 2. !! CRITICAL DIAGNOSTIC STEP !!
+#     # Check the status of the inland neighbor BEFORE doing anything else.
+#     initial_neighbor_status = grid.status_at_node[inland_neighbor_id]
+#     print(f"BEFORE changes, status of inland neighbor ({inland_neighbor_id}) is: {initial_neighbor_status}")
+#     if initial_neighbor_status != 0:
+#         print("--> PROBLEM DETECTED: The inland neighbor is NOT a CORE node (status 0) to begin with!")
+
+#     # 3. Set all boundaries to CLOSED
+#     grid.set_closed_boundaries_at_grid_edges(True, True, True, True)
+#     print("Closed all boundaries.")
+
+#     # 4. Set the single outlet node to FIXED_GRADIENT
+#     grid.status_at_node[outlet_node] = grid.BC_NODE_IS_FIXED_GRADIENT
+#     print(f"Set outlet node {outlet_node} to FIXED_GRADIENT (status 2).")
+
+#     # 5. Find the inland neighbor (the robust way)
+#     all_neighbors = grid.adjacent_nodes_at_node[outlet_node]
+#     core_neighbors = all_neighbors[grid.status_at_node[all_neighbors] == grid.BC_NODE_IS_CORE]
+
+#     # This is where your script is failing
+#     if core_neighbors.size == 0:
+#         print("\n--- ERROR ANALYSIS ---")
+#         print(grid.status_at_node[inland_neighbor_id])  # Reset status to CORE for diagnostic
+#         print(f"Checking all {len(all_neighbors)} neighbors of outlet node {outlet_node}...")
+#         neighbor_statuses = grid.status_at_node[all_neighbors]
+#         print(f"Their current statuses are: {list(neighbor_statuses)}")
+#         print("Found no neighbors with CORE status (0).")
+#         raise ValueError("Outlet node has no CORE neighbors. Check grid setup.")
+    
+#     # ... (rest of your function) ...
+#     inland_neighbor = core_neighbors[0]
+#     print(f"✅ Successfully found inland neighbor: {inland_neighbor}")
+#     # ...
+    
+#     return grid
+
+# def define_boundaries_corner(grid, slope_direction, outlet_gradient=0.002):
+#     """
+#     Final diagnostic version.
+#     """
+#     nrows, ncols = grid.shape
+
+#     if slope_direction == "Southeast":
+#         outlet_node = ncols - 1
+#     else:
+#         raise NotImplementedError("Debug logic only for 'Southeast'")
+
+#     # Set boundaries using the robust manual method
+#     all_boundary_nodes = grid.boundary_nodes
+#     nodes_to_close = np.setdiff1d(all_boundary_nodes, outlet_node)
+#     grid.status_at_node[outlet_node] = grid.BC_NODE_IS_FIXED_VALUE
+#     grid.status_at_node[nodes_to_close] = grid.BC_NODE_IS_CLOSED
+
+#     # Check for neighbors
+#     all_neighbors = grid.adjacent_nodes_at_node[outlet_node]
+#     core_neighbors = all_neighbors[grid.status_at_node[all_neighbors] == grid.BC_NODE_IS_CORE]
+
+#     if core_neighbors.size == 0:
+#         print("\n--- FINAL DEBUG ---")
+        
+#         # Get the raw neighbor list from Landlab
+#         actual_neighbors_found = grid.adjacent_nodes_at_node[outlet_node]
+        
+#         print(f"Landlab found these neighbors for outlet node {outlet_node}:")
+#         print(f"--> {list(actual_neighbors_found)}")
+        
+#         expected_neighbor = outlet_node + ncols - 1
+#         print(f"\nThe expected inland neighbor is node {expected_neighbor}.")
+#         print(f"The status of node {expected_neighbor} is: {grid.status_at_node[expected_neighbor]}")
+
+#         raise ValueError("Debug Stop: Compare the list above with the expected neighbor.")
+
+#     # ... (rest of your function) ...
+#     print("✅ Successfully found a CORE neighbor.")
+#     return grid

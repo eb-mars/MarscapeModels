@@ -125,7 +125,7 @@ def create_step_landscape(rows, cols, cell_size=1000, step_height=100.0, rf=0.1,
     return grid
 
 # --- Functions to add lithology patterns
-def add_uniform_lithology(grid, erodibility=1e-6):
+def add_uniform_lithology(grid, erodibility=1e-4):
     """
     Adds a uniform lithology field to the grid.
 
@@ -141,7 +141,7 @@ def add_uniform_lithology(grid, erodibility=1e-6):
     K_sp *= erodibility
     return grid  # Return the modified grid
 
-def add_checkerboard_lithology(grid, erodibility_1=1e-6, erodibility_2=5e-6):
+def add_checkerboard_lithology(grid, erodibility_1=1e-4, erodibility_2=5e-4):
     """
     Adds a field for erodibility ('K_sp') in a checkerboard pattern.
     This function MODIFIES the grid it receives.
@@ -166,7 +166,7 @@ def add_checkerboard_lithology(grid, erodibility_1=1e-6, erodibility_2=5e-6):
             
     return grid
 
-def add_striped_lithology(grid, layer_thickness=200.0, erodibility_1=1e-6, erodibility_2=5e-6):
+def add_striped_lithology(grid, layer_thickness=200.0, erodibility_1=1e-4, erodibility_2=5e-4):
     """
     Adds horizontal layers of two rock types to the grid.
 
@@ -195,7 +195,7 @@ def add_striped_lithology(grid, layer_thickness=200.0, erodibility_1=1e-6, erodi
     
     return grid
 
-def add_split_lithology(grid, erodibility_left=1e-6, erodibility_right=5e-6):
+def add_split_lithology(grid, erodibility_left=1e-4, erodibility_right=5e-4):
     """
     Adds a vertically split lithology to the grid.
 

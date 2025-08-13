@@ -1,8 +1,8 @@
 model_name: 'default_p0'
 #configure model grid
-seed: 2
-nrows: 40
-ncols: 40
+seed: 3
+nrows: 400
+ncols: 400
 cell_size: 100.
 landscape_type: tilted
 lithology_type: uniform
